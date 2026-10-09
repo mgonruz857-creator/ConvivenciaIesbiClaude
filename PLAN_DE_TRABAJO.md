@@ -38,7 +38,20 @@ La app en uso (`convivenciaiesbi.github.io`) no se toca hasta el paso final.
 - [ ] Probar la fase 2 en el entorno de pruebas real.
 - [x] Aviso visible de cambios guardados solo en el dispositivo (franja ámbar y estado en la confirmación del parte).
 
-## 🚀 Paso a producción (cuando Miguel Ángel lo indique)
+## ✅ EN PRODUCCIÓN desde el 9/10/2026 (18:10)
+
+- Servidor v2 en el proyecto `API_Convivencia_BlasInfante` (cuenta 14007180), implementación de siempre
+  (`…HimLNQ`) con versión nueva; las otras tres implementaciones antiguas, archivadas.
+- Web publicada desde la rama `produccion` de esta copia en `convivenciaiesbi/convivenciaiesbi.github.io`
+  (avance rápido). Para futuras versiones: probar en pruebas (rama `main`), pasar los cambios a
+  `produccion` y publicar.
+- Copia de seguridad del JSON de la v1: `COPIA_SEGURIDAD_ANTES_V2_2026-10-09_18-10.json` (carpeta de Drive).
+- Partes perdidos por la v1: 30 (creados el 2, 3 y 5/10), recuperados desde la copia del 8/10 de Miguel
+  Ángel con `prepararPartesParaRevisar` + «Recuperar todos». Total: 71 partes.
+- 37 partes de la semana del 5/10 son reconstrucciones de la v1 (sin el texto original de los hechos).
+- Queda en el repositorio del centro una rama sin uso `prueba-permiso-claude` (se puede borrar en GitHub).
+
+## 🚀 Paso a producción (histórico del procedimiento)
 
 > Decisión (8/10/2026): Miguel Ángel avisará cuando quiera pasar a producción, tras las nuevas
 > funcionalidades. En ese momento: guía paso a paso, muy detallada y explícita.
