@@ -229,7 +229,8 @@ export class AuthService {
     motivoBaja?: string;
     error?: string;
   }> {
-    const r = await llamarApi('estadoCuenta', { email: email.trim().toLowerCase() });
+    // Con margen: la primera petición tras un rato sin uso (o tras actualizar el servidor) puede tardar
+    const r = await llamarApi('estadoCuenta', { email: email.trim().toLowerCase() }, 45000);
     return r as any;
   }
 

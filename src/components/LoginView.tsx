@@ -90,7 +90,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
         .then((r) => {
           if (!vigente) return;
           setEstadoCuenta(r.ok ? { email: cleanEmail, ...r } : null);
-          if (!r.ok && r.error) setErrorMessage(r.error);
+          // Si solo es lentitud o falta de conexión, no se muestra error: el inicio de sesión lo dirá si hace falta
+          if (!r.ok && r.error && (r as any).codigo !== 'SIN_CONEXION') setErrorMessage(r.error);
         })
         .finally(() => {
           if (vigente) setIsCheckingUserCredentials(false);
