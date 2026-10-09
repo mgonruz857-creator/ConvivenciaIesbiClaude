@@ -70,6 +70,61 @@ function restablecerClaveAdministrador() {
   Logger.log('Contraseña de ' + email + ' restablecida. Fije una nueva en el próximo acceso a la app.');
 }
 
+/**
+ * Comprobación de los datos (solo cuenta; no modifica nada ni muestra datos personales).
+ * Elegir "diagnosticoDatos" en el desplegable de arriba, pulsar "Ejecutar" y mirar el
+ * "Registro de ejecución".
+ */
+function diagnosticoDatos() {
+  var db = leerDbDeDrive(true);
+  var borrados = {};
+  db.deleted_sanciones.forEach(function (id) { borrados[id] = true; });
+  var activos = db.sanciones.filter(function (x) { return x && x.id_sancion && !borrados[x.id_sancion]; });
+  var sinteticos = activos.filter(function (x) {
+    return String(x.id_sancion).indexOf('snc-rec-') === 0 || String(x.id_sancion).indexOf('snc-v2-') === 0 ||
+      String(x.descripcion_hechos || '').indexOf('Incidencia registrada según tipificación ROF') === 0;
+  }).length;
+  var porExp = {}, expRepetidos = 0;
+  activos.forEach(function (x) {
+    var k = String(x.numero_expediente || '') + '|' + x.id_alumno;
+    if (x.numero_expediente) { if (porExp[k]) expRepetidos++; porExp[k] = true; }
+  });
+  var porMes = {}, porSemana = {};
+  activos.forEach(function (x) {
+    var f = String(x.fecha || '').substring(0, 10);
+    porMes[f.substring(0, 7) || 'sin fecha'] = (porMes[f.substring(0, 7) || 'sin fecha'] || 0) + 1;
+    var d = new Date(f + 'T12:00:00');
+    if (!isNaN(d.getTime())) {
+      var lunes = new Date(d.getTime() - ((d.getDay() + 6) % 7) * 86400000);
+      var k2 = Utilities.formatDate(lunes, 'Europe/Madrid', 'yyyy-MM-dd');
+      porSemana[k2] = (porSemana[k2] || 0) + 1;
+    }
+  });
+  var saldos = (db.saldos_antes_v2 && db.saldos_antes_v2.saldos) || {};
+  var numSaldos = 0, saldosNoNumero = 0, menos10 = 0;
+  for (var id in saldos) {
+    numSaldos++;
+    var v = Number(saldos[id]);
+    if (isNaN(v) || saldos[id] === null || saldos[id] === '') saldosNoNumero++;
+    else if (v < 10) menos10++;
+  }
+  var mig = db.migracion_v2 || {};
+  var lineas = [
+    'Partes en el archivo (todos): ' + db.sanciones.length,
+    'Partes activos: ' + activos.length + ' (copias automáticas de la v1 entre ellos: ' + sinteticos + ')',
+    'Marcados como borrados (lista de borrados): ' + db.deleted_sanciones.length,
+    'Partes borrados por revisar guardados al actualizar: ' + ((mig.partes_marcados_borrados || []).length),
+    'Partes que comparten número de expediente con otro del mismo alumno: ' + expRepetidos,
+    'Alumnado: ' + db.alumnos.length + ' · Profesorado: ' + db.profesores.length,
+    'Saldos anotados de la v1: ' + numSaldos + ' (sin número: ' + saldosNoNumero + ', por debajo de 10: ' + menos10 + ')',
+    'Copias de seguridad: ' + ((mig.copias || []).join(', ') || 'ninguna'),
+    'Partes por mes: ' + JSON.stringify(porMes),
+    'Partes por semana (lunes): ' + JSON.stringify(porSemana),
+  ];
+  lineas.forEach(function (l) { Logger.log(l); });
+  return lineas.join('\n');
+}
+
 // ------------------------------------------------------------------ Entrada
 
 function doGet(e) {
