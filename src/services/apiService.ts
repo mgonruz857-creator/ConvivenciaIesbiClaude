@@ -17,7 +17,27 @@ export interface RespuestaApi {
   [clave: string]: any;
 }
 
+/**
+ * A veces Google redirige la petición por el camino y esta llega al servidor como una lectura
+ * vacía (sin el correo, la contraseña ni los datos): el servidor responde solo "{servicio: SIGC-BI}".
+ * En ese caso se repite la petición (es intermitente), hasta 3 intentos.
+ */
 export async function llamarApi(accion: string, datos: Record<string, any> = {}, timeoutMs = 20000): Promise<RespuestaApi> {
+  let r: RespuestaApi = { ok: false };
+  for (let intento = 1; intento <= 3; intento++) {
+    r = await llamarApiUnaVez(accion, datos, timeoutMs);
+    const llegoVacia = r && r.ok && (r as any).servicio === 'SIGC-BI' && (r as any).accion === undefined;
+    if (!llegoVacia) return r;
+    await new Promise((res) => setTimeout(res, 400 * intento));
+  }
+  return {
+    ok: false,
+    codigo: 'PETICION_PERDIDA',
+    error: 'La petición no ha llegado completa al servidor. Vuelva a intentarlo en unos segundos.',
+  };
+}
+
+async function llamarApiUnaVez(accion: string, datos: Record<string, any>, timeoutMs: number): Promise<RespuestaApi> {
   const controller = new AbortController();
   const temporizador = setTimeout(() => controller.abort(), timeoutMs);
   try {
