@@ -8,7 +8,7 @@ import { ARCHIVO_DB_DRIVE } from '/home/claude/convivenciaiesbiclaude/src/config
  * fechas: fecha de modificación de cada archivo (cambia con setContent o con tocarExterno()).
  * Se puede compartir "drive" entre dos servidores (p. ej. el v1 y el v2 a la vez).
  */
-export function crearServidor(codigo: string, archivoInicial?: any, opciones?: { drive?: any; esperaLock?: () => void }) {
+export function crearServidor(codigo: string, archivoInicial?: any, opciones?: { drive?: any; esperaLock?: () => void; extra?: Record<string, any> }) {
   const drive = opciones?.drive || { archivos: {} as Record<string, string>, fechas: {} as Record<string, number>, reloj: 1 };
   const archivos = drive.archivos;
   if (archivoInicial) { archivos['DB'] = JSON.stringify(archivoInicial); drive.fechas['DB'] = drive.reloj++; }
@@ -49,6 +49,7 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
         createFile: (n: string, t: string) => { let k = clave(n); if (k === 'DB' && archivos['DB'] !== undefined) k = 'DB#' + (delPrincipal().length + 1); archivos[k] = t; drive.fechas[k] = drive.reloj++; return archivo(k); } }) },
     Logger: { log: () => {} },
   };
+  Object.assign(ctx, opciones?.extra || {});
   vm.createContext(ctx); vm.runInContext(codigo, ctx);
   const post = (obj: any) => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify(obj) } }).texto);
   /** Simula que alguien (otra versión de la app) modifica el archivo por fuera de este servidor. */

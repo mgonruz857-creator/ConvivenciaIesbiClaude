@@ -173,6 +173,127 @@ function prepararPartesParaRevisar() {
   }
 }
 
+// ------------------------------------------------------------------ Textos de partes reconstruidos
+
+var TEXTO_RECONSTRUIDO = 'Incidencia registrada según tipificación ROF';
+var ARCHIVO_TEXTOS = 'RECUPERACION_TEXTOS_PARTES.json';
+
+function esReconstruido(x) {
+  return !!x && (String(x.id_sancion || '').indexOf('snc-rec-') === 0 ||
+    String(x.descripcion_hechos || '').indexOf(TEXTO_RECONSTRUIDO) === 0);
+}
+
+function claveParte(x) {
+  return String(x.numero_expediente || '').trim() + '|' + String(x.id_alumno || '');
+}
+
+function archivoEnCarpeta(nombre) {
+  var it = DriveApp.getFolderById(CARPETA_ID).getFilesByName(nombre);
+  return it.hasNext() ? it.next() : null;
+}
+
+/**
+ * PASO 1 (desde el editor; SOLO LEE). Busca en las versiones anteriores del archivo de datos el
+ * texto original de los partes que la versión 1 reconstruyó ("Incidencia registrada según
+ * tipificación ROF..."). Empareja por número de expediente y alumno/a. No modifica ningún parte:
+ * deja lo encontrado en RECUPERACION_TEXTOS_PARTES.json. Si se acaba el tiempo, se vuelve a ejecutar
+ * y continúa donde lo dejó.
+ */
+function buscarTextosEnVersiones() {
+  var inicio = new Date().getTime();
+  var f = archivoDb();
+  if (!f) { Logger.log('No se encuentra el archivo de datos.'); return; }
+  var cab = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+  var base = 'https://www.googleapis.com/drive/v3/files/' + f.getId() + '/revisions';
+
+  var versiones = [], pagina = '';
+  do {
+    var r = UrlFetchApp.fetch(base + '?pageSize=200&fields=nextPageToken,revisions(id,modifiedTime,size)' +
+      (pagina ? '&pageToken=' + encodeURIComponent(pagina) : ''), { headers: cab, muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) {
+      Logger.log('No se pueden leer las versiones (' + r.getResponseCode() + '): ' + r.getContentText().substring(0, 400));
+      Logger.log('Si el mensaje habla de "Drive API" sin activar: en el editor, "Servicios" (+) > Drive API > Añadir, y volver a ejecutar.');
+      return;
+    }
+    var j = JSON.parse(r.getContentText());
+    versiones = versiones.concat(j.revisions || []);
+    pagina = j.nextPageToken || '';
+  } while (pagina);
+  versiones.sort(function (a, b) { return String(a.modifiedTime).localeCompare(String(b.modifiedTime)); });
+
+  var db = leerDbDeDrive();
+  var objetivos = {};
+  db.sanciones.forEach(function (x) { if (esReconstruido(x)) objetivos[claveParte(x)] = x.id_sancion; });
+  var totalObjetivos = Object.keys(objetivos).length;
+
+  var fp = archivoEnCarpeta(ARCHIVO_TEXTOS);
+  var progreso = fp ? JSON.parse(fp.getBlob().getDataAsString()) : { leidas: {}, textos: {} };
+  var leidasAhora = 0, terminado = true;
+  for (var i = 0; i < versiones.length; i++) {
+    var v = versiones[i];
+    if (progreso.leidas[v.id]) continue;
+    if (new Date().getTime() - inicio > 270000) { terminado = false; break; }
+    try {
+      var rv = UrlFetchApp.fetch(base + '/' + v.id + '?alt=media', { headers: cab, muteHttpExceptions: true });
+      if (rv.getResponseCode() === 200) {
+        var d = decodificarDb(rv.getContentText());
+        d.sanciones.forEach(function (x) {
+          if (!x || esReconstruido(x)) return;
+          var texto = String(x.descripcion_hechos || '').trim();
+          var id = objetivos[claveParte(x)];
+          if (id && texto) progreso.textos[id] = { texto: texto, version: v.modifiedTime, id_original: x.id_sancion };
+        });
+      }
+    } catch (e) {
+      // versión ilegible: se salta
+    }
+    progreso.leidas[v.id] = v.modifiedTime;
+    leidasAhora++;
+  }
+  var contenido = JSON.stringify(progreso);
+  if (fp) fp.setContent(contenido);
+  else DriveApp.getFolderById(CARPETA_ID).createFile(ARCHIVO_TEXTOS, contenido, MimeType.PLAIN_TEXT);
+
+  var primera = versiones.length ? versiones[0].modifiedTime : '-';
+  var ultima = versiones.length ? versiones[versiones.length - 1].modifiedTime : '-';
+  Logger.log('Versiones en Drive: ' + versiones.length + ' (de ' + primera + ' a ' + ultima + ')');
+  Logger.log('Versiones leídas ahora: ' + leidasAhora + ' · en total: ' + Object.keys(progreso.leidas).length);
+  Logger.log('Partes reconstruidos: ' + totalObjetivos + ' · texto original encontrado: ' + Object.keys(progreso.textos).length);
+  Logger.log(terminado ? 'Búsqueda terminada. No se ha modificado ningún parte.'
+                       : 'Se acabó el tiempo: vuelva a ejecutar buscarTextosEnVersiones para continuar.');
+}
+
+/**
+ * PASO 2 (desde el editor; solo tras revisar el paso 1). Pone el texto original encontrado en cada
+ * parte reconstruido. Solo cambia la descripción de los hechos; nada más del parte.
+ */
+function aplicarTextosRecuperados() {
+  var fp = archivoEnCarpeta(ARCHIVO_TEXTOS);
+  if (!fp) { Logger.log('Primero hay que ejecutar buscarTextosEnVersiones.'); return; }
+  var progreso = JSON.parse(fp.getBlob().getDataAsString());
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var db = leerDbDeDrive();
+    var n = 0;
+    db.sanciones.forEach(function (x) {
+      var t = progreso.textos[x.id_sancion];
+      if (t && esReconstruido(x) && String(x.descripcion_hechos || '').indexOf(TEXTO_RECONSTRUIDO) === 0) {
+        x.descripcion_hechos = t.texto;
+        x.texto_recuperado_de_version = t.version;
+        n++;
+      }
+    });
+    if (n) {
+      registrarAuditoria(db, norm(ADMIN_INICIAL), 'Partes/TextosRecuperados',
+        'Texto original de ' + n + ' parte(s) reconstruido(s) recuperado de versiones anteriores del archivo.');
+    }
+    Logger.log('Partes con el texto original recuperado: ' + n);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ------------------------------------------------------------------ Entrada
 
 function doGet(e) {
