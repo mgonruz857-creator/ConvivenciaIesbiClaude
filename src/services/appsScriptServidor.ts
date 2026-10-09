@@ -125,6 +125,54 @@ function diagnosticoDatos() {
   return lineas.join('\n');
 }
 
+/**
+ * Recuperación de partes perdidos (desde el editor). Lee los archivos de la carpeta cuyo nombre
+ * empieza por RECUPERAR_PARTES_ (con una lista "partes") y los pone en el informe de Jefatura como
+ * "partes borrados por revisar". NO recupera ninguno: Jefatura decide en la app con «Recuperar».
+ * Después renombra cada archivo a PROCESADO_... para no leerlo dos veces.
+ */
+function prepararPartesParaRevisar() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var db = leerDbDeDrive();
+    var activos = {};
+    db.sanciones.forEach(function (x) { if (x && x.id_sancion) activos[x.id_sancion] = true; });
+    if (!db.migracion_v2) db.migracion_v2 = { fecha: new Date().toISOString(), copias: [] };
+    var lista = db.migracion_v2.partes_marcados_borrados || [];
+    var ya = {};
+    lista.forEach(function (x) { if (x && x.id_sancion) ya[x.id_sancion] = true; });
+    var archivos = DriveApp.getFolderById(CARPETA_ID).getFiles();
+    var leidos = 0, anadidos = 0, yaActivos = 0;
+    var procesados = [];
+    while (archivos.hasNext()) {
+      var f = archivos.next();
+      var nombre = f.getName();
+      if (nombre.indexOf('RECUPERAR_PARTES_') !== 0) continue;
+      var d = decodificarDb(f.getBlob().getDataAsString());
+      leidos++;
+      (Array.isArray(d.partes) ? d.partes : []).forEach(function (x) {
+        if (!x || !x.id_sancion) return;
+        if (activos[x.id_sancion]) { yaActivos++; return; }
+        if (ya[x.id_sancion]) return;
+        lista.push(x);
+        ya[x.id_sancion] = true;
+        anadidos++;
+      });
+      procesados.push(f);
+    }
+    db.migracion_v2.partes_marcados_borrados = lista;
+    if (anadidos) escribirDb(db);
+    procesados.forEach(function (f) { f.setName('PROCESADO_' + f.getName()); });
+    var r = 'Archivos leídos: ' + leidos + ' · Partes añadidos al informe para revisar: ' + anadidos +
+      ' · Ya estaban activos: ' + yaActivos + ' · Total por revisar: ' + lista.length;
+    Logger.log(r);
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ------------------------------------------------------------------ Entrada
 
 function doGet(e) {

@@ -17,6 +17,7 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
   const delPrincipal = () => Object.keys(archivos).filter(k => k === 'DB' || k.startsWith('DB#'));
   const archivo = (k: string) => ({
     getId: () => 'id-' + k,
+    getName: () => (k === 'DB' ? ARCHIVO_DB_DRIVE : k),
     setName: (n: string) => { archivos[n] = archivos[k]; drive.fechas[n] = drive.fechas[k]; delete archivos[k]; delete drive.fechas[k]; k = n; },
     getBlob: () => ({ getDataAsString: () => archivos[k] }),
     setContent: (t: string) => { archivos[k] = t; drive.fechas[k] = drive.reloj++; },
@@ -43,6 +44,7 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
     DriveApp: {
       getFileById: (id: string) => { const k = id.replace(/^id-/, ''); if (archivos[k] === undefined) throw new Error('No existe'); return archivo(k); },
       getFolderById: () => ({
+        getFiles: () => { const l = Object.keys(archivos).map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
         getFilesByName: (n: string) => { const k = clave(n); const ks = k === 'DB' ? delPrincipal() : (archivos[k] !== undefined ? [k] : []); const l = ks.map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
         createFile: (n: string, t: string) => { let k = clave(n); if (k === 'DB' && archivos['DB'] !== undefined) k = 'DB#' + (delPrincipal().length + 1); archivos[k] = t; drive.fechas[k] = drive.reloj++; return archivo(k); } }) },
     Logger: { log: () => {} },

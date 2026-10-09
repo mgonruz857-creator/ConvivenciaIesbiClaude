@@ -61,6 +61,17 @@ export const InformeCambioVersion: React.FC<Props> = ({ alumnos, sanciones, prof
     return StorageService.getPartesMarcadosBorradosV2().filter((s) => !activos.has(s.id_sancion));
   }, [sanciones]);
   const [, refrescar] = useState(0);
+  const recuperarTodos = () => {
+    if (!window.confirm(`¿Recuperar los ${marcados.length} partes de la lista? Volverán a contar en el carnet de cada alumno/a.`)) return;
+    const email = AuthService.getCurrentUser()?.email || '';
+    let n = 0;
+    marcados.forEach((s) => { if (StorageService.recuperarParteMarcadoBorrado(s.id_sancion, email)) n++; });
+    if (n) {
+      onCambio?.();
+      GoogleDriveSyncService.triggerFastSync(100);
+      refrescar((x) => x + 1);
+    }
+  };
   const recuperar = (s: Sancion) => {
     const nombre = nombreAlumno(s.id_alumno);
     if (!window.confirm(`¿Recuperar el parte del ${s.fecha} de ${nombre}? Volverá a contar en su carnet.`)) return;
@@ -202,7 +213,14 @@ export const InformeCambioVersion: React.FC<Props> = ({ alumnos, sanciones, prof
 
               {marcados.length > 0 && (
                 <section>
-                  <h3 className="font-semibold text-slate-800 mb-1">Partes borrados por revisar ({marcados.length})</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <h3 className="font-semibold text-slate-800">Partes borrados por revisar ({marcados.length})</h3>
+                    {marcados.length > 1 && (
+                      <button onClick={recuperarTodos} className="text-xs font-semibold border border-indigo-300 text-indigo-800 rounded px-2 py-1 hover:bg-indigo-50">
+                        Recuperar todos
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500 mb-2">
                     La versión anterior tenía estos partes marcados como borrados, pero seguían guardados (por eso a
                     veces aparecían y otras no). Ahora están borrados y no cuentan en el carnet. Si alguno no se
