@@ -98,12 +98,13 @@ El cambio (~20 min, sin profesorado trabajando):
 Avisos: Jefatura (saldos que suben, informe); todo el profesorado vuelve a iniciar sesión con su
 contraseña de siempre; quien tuviera la contraseña restablecida en la app antigua fijará una nueva.
 
-## ⏳ Pendiente de pasar a producción (acordado: tras ~1 semana de uso estable, hacia el 16/10/2026)
+## ✅ Inicio de sesión más rápido (en producción el 9/10/2026, 19:30, a petición de Miguel Ángel)
 
-- Inicio de sesión más rápido (rama `main`, probado en simulador): datos en la misma respuesta del login,
-  sin releer Drive salvo al escribir, mensaje "Cargando datos del centro…". Requiere implementar versión
-  nueva del servidor en API_Convivencia_BlasInfante y publicar la web. Aviso automático "mantener
-  despierto" descartado por ahora.
+- Datos en la misma respuesta del login, sin releer Drive salvo al escribir, "Cargando datos del centro…".
+- La comprobación de la cuenta espera hasta 45 s y no muestra error si solo tarda.
+- Si Google redirige una petición y llega vacía al servidor (aparece como doGet), la app la repite (hasta 3 veces).
+- Resultado: entrada en 5-6 s con datos cargados (el servidor tarda ~1 s; el resto es Google).
+- Pendiente opcional: aviso automático para mantener el servidor "despierto" si hay esperas largas a primera hora.
 
 ## ✨ Fase 3 – Nuevas funcionalidades
 
