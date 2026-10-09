@@ -48,7 +48,9 @@ La app en uso (`convivenciaiesbi.github.io`) no se toca hasta el paso final.
 - Copia de seguridad del JSON de la v1: `COPIA_SEGURIDAD_ANTES_V2_2026-10-09_18-10.json` (carpeta de Drive).
 - Partes perdidos por la v1: 30 (creados el 2, 3 y 5/10), recuperados desde la copia del 8/10 de Miguel
   Ángel con `prepararPartesParaRevisar` + «Recuperar todos». Total: 71 partes.
-- 37 partes de la semana del 5/10 son reconstrucciones de la v1 (sin el texto original de los hechos).
+- 37 partes de la semana del 5/10 eran reconstrucciones de la v1: 22 recuperaron su texto original desde las
+  versiones de Drive (`buscarTextosEnVersiones` + `aplicarTextosRecuperados`); 15 sin texto original (Miguel Ángel
+  decidió no intentar una búsqueda menos estricta).
 - Queda en el repositorio del centro una rama sin uso `prueba-permiso-claude` (se puede borrar en GitHub).
 
 ## 🚀 Paso a producción (histórico del procedimiento)
