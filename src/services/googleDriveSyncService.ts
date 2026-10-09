@@ -9,6 +9,7 @@ import { AuthService } from './authService';
 import { URL_API_DRIVE, CARPETA_DRIVE_ID } from '../config/entorno';
 import { llamarApi } from './apiService';
 import { guardarCola, restaurarCola } from './colaPendiente';
+import { tomarDatosIniciales } from './datosIniciales';
 
 export const EVENTO_ESTADO_GUARDADO = 'sigc-estado-guardado';
 
@@ -163,7 +164,9 @@ export class GoogleDriveSyncService {
       const primeraCarga = !StorageService.hasLoadedFromDrive();
       // Si ya tenemos los datos, pedir solo "¿ha cambiado algo desde esta versión?"
       const desde = StorageService.hasLoadedFromDrive() ? this.lastRemoteTimestamp : null;
-      const respuesta = await llamarApi('leer', desde ? { token, desde } : { token });
+      // Primera carga tras iniciar sesión: los datos ya vinieron con la respuesta del inicio de sesión
+      const iniciales = primeraCarga ? tomarDatosIniciales() : null;
+      const respuesta = iniciales ? { ok: true, data: iniciales } : await llamarApi('leer', desde ? { token, desde } : { token });
       if (!respuesta.ok) {
         throw new Error(respuesta.error || 'El servidor de datos no ha respondido correctamente.');
       }

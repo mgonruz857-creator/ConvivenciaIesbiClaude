@@ -142,12 +142,21 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     setAuthStage(isFirstTimeAccess ? 'Registrando su contraseña de forma segura...' : 'Comprobando sus credenciales...');
     const res = await AuthService.login(cleanEmail, password, isSharedDevice);
-    setIsLoading(false);
-    setAuthStage(null);
 
     if (res.success && res.user) {
+      // Preparar los datos antes de mostrar la app (vienen con la respuesta del inicio de sesión)
+      setAuthStage('Cargando datos del centro...');
+      try {
+        await GoogleDriveSyncService.pullFromGoogleDrive({ forceRefresh: true });
+      } catch {
+        /* la app volverá a intentarlo enseguida */
+      }
+      setIsLoading(false);
+      setAuthStage(null);
       onLoginSuccess(res.user);
     } else {
+      setIsLoading(false);
+      setAuthStage(null);
       setErrorMessage(res.error || 'No se ha podido iniciar sesión.');
       // Por si otra persona fijó la contraseña mientras tanto, refrescar el estado
       AuthService.consultarCuenta(cleanEmail).then((r) => r.ok && setEstadoCuenta({ email: cleanEmail, ...r }));

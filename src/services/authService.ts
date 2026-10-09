@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { guardarDatosIniciales } from './datosIniciales';
 import { Profesor } from '../types/convivencia';
 import { StorageService } from './storageService';
 import { llamarApi } from './apiService';
@@ -271,6 +272,7 @@ export class AuthService {
       return { success: false, error: r.error || 'No se ha podido iniciar sesión.' };
     }
     const user = r.usuario as Profesor;
+    guardarDatosIniciales(r.data);
     this.guardarToken(r.token, isShared);
     this.persistSession(user, isShared);
     return { success: true, user, primerAcceso: Boolean(r.primerAcceso) };

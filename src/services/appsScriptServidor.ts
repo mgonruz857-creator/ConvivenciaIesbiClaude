@@ -784,8 +784,12 @@ function login(req) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    var db = leerDb(true);
+    // La copia en memoria (comprobada contra Drive) basta para comprobar la contraseña;
+    // el archivo solo se relee si hay que escribir en él (paso de una contraseña de la v1)
+    var db = leerDb();
     var p = buscarProfesor(db, email);
+    // Si no aparece (o está de baja) en la copia en memoria, confirmarlo con el archivo antes de decir que no
+    if (!p || p.estado === 'INACTIVO') { db = leerDb(true); p = buscarProfesor(db, email); }
     if (!p) fallo('NO_REGISTRADO', 'La cuenta "' + email + '" no figura en el claustro. Debe darla de alta Jefatura de Estudios.');
     if (p.estado === 'INACTIVO') fallo('BAJA', 'La cuenta "' + email + '" está de baja en el centro.');
 
@@ -799,6 +803,7 @@ function login(req) {
       // Contraseña de la versión anterior: comprobar y convertir al formato nuevo
       if (!claveAntiguaCorrecta(db, email, clave)) return claveIncorrecta(email, intentos);
       fijarClave(email, clave);
+      db = leerDb(true);
       borrarClaveAntigua(db, email);
       escribirDb(db);
     } else {
@@ -809,7 +814,9 @@ function login(req) {
     }
 
     cache.remove('FALLOS_' + email);
-    return { ok: true, token: crearSesion(email), usuario: perfilPublico(p), admin: esAdmin(p), primerAcceso: primerAcceso };
+    // Los datos van en la misma respuesta: la app no tiene que hacer una segunda petición
+    return { ok: true, token: crearSesion(email), usuario: perfilPublico(p), admin: esAdmin(p), primerAcceso: primerAcceso,
+             data: esAdmin(p) ? sinCredenciales(db) : vistaDocente(db, p) };
   } finally {
     lock.releaseLock();
   }
