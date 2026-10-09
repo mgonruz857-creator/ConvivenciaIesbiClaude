@@ -98,6 +98,13 @@ El cambio (~20 min, sin profesorado trabajando):
 Avisos: Jefatura (saldos que suben, informe); todo el profesorado vuelve a iniciar sesión con su
 contraseña de siempre; quien tuviera la contraseña restablecida en la app antigua fijará una nueva.
 
+## ⏳ Pendiente de pasar a producción (acordado: tras ~1 semana de uso estable, hacia el 16/10/2026)
+
+- Inicio de sesión más rápido (rama `main`, probado en simulador): datos en la misma respuesta del login,
+  sin releer Drive salvo al escribir, mensaje "Cargando datos del centro…". Requiere implementar versión
+  nueva del servidor en API_Convivencia_BlasInfante y publicar la web. Aviso automático "mantener
+  despierto" descartado por ahora.
+
 ## ✨ Fase 3 – Nuevas funcionalidades
 
 - [x] **Mi Tutoría**: el tutor/a ve todos los partes de su grupo completos (solo lectura), el saldo
