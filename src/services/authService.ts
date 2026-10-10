@@ -73,6 +73,7 @@ export class AuthService {
    */
   static isSharedSession(): boolean {
     try {
+      if (sessionStorage.getItem(SESSION_KEY)) return true;
       const sessionType = sessionStorage.getItem(SESSION_TYPE_KEY) || localStorage.getItem(SESSION_TYPE_KEY);
       if (sessionType === 'personal') return false;
       return true; // Seguro por defecto: si no está definido, se asume compartido
@@ -113,8 +114,10 @@ export class AuthService {
       const isShared = this.isSharedSession();
       const limit = isShared ? INACTIVITY_LIMIT_SHARED_MS : INACTIVITY_LIMIT_PERSONAL_MS;
 
-      const hasSession = Boolean(sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY));
-      const lastActivityRaw = sessionStorage.getItem(LAST_ACTIVITY_KEY) || localStorage.getItem(LAST_ACTIVITY_KEY);
+      // Cada sesión con su propio almacén: la de esta pestaña (compartido) o la del portátil (personal)
+      const almacen = sessionStorage.getItem(SESSION_KEY) ? sessionStorage : localStorage;
+      const hasSession = Boolean(almacen.getItem(SESSION_KEY));
+      const lastActivityRaw = almacen.getItem(LAST_ACTIVITY_KEY);
 
       if (!hasSession || !lastActivityRaw) {
         return {
@@ -171,8 +174,8 @@ export class AuthService {
 
       if (!raw) return null;
 
-      // 3. Comprobar inactividad
-      const lastActivityRaw = sessionStorage.getItem(LAST_ACTIVITY_KEY) || localStorage.getItem(LAST_ACTIVITY_KEY);
+      // 3. Comprobar inactividad (en el mismo almacén que la sesión)
+      const lastActivityRaw = (sessionStorage.getItem(SESSION_KEY) ? sessionStorage : localStorage).getItem(LAST_ACTIVITY_KEY);
       const now = Date.now();
       const limit = isShared ? INACTIVITY_LIMIT_SHARED_MS : INACTIVITY_LIMIT_PERSONAL_MS;
 
@@ -322,15 +325,20 @@ export class AuthService {
       llamarApi('logout', { token }).catch(() => {});
     }
     try {
+      // Una pestaña con sesión de equipo compartido (sessionStorage) solo cierra LA SUYA: no toca
+      // la sesión de portátil personal (localStorage) que pueda estar abierta en otra pestaña.
+      const sesionDeEstaPestana = Boolean(sessionStorage.getItem(SESSION_KEY) || sessionStorage.getItem(TOKEN_KEY));
       sessionStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(TOKEN_KEY);
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(SESSION_TYPE_KEY);
       sessionStorage.removeItem(LAST_ACTIVITY_KEY);
 
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.removeItem(SESSION_TYPE_KEY);
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      if (!sesionDeEstaPestana) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(SESSION_TYPE_KEY);
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+      }
 
       if (reason === 'MANUAL') {
         sessionStorage.removeItem(LOGOUT_REASON_KEY);

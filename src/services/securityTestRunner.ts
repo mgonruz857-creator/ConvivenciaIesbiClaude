@@ -307,10 +307,13 @@ export class SecurityTestRunner {
           const testEntity = 'Sancion/TEST-SEC-07';
           const testDetails = 'Test de verificación de trazabilidad LOPD/RGPD';
 
-          const initialLogsCount = StorageService.getAuditLogs().length;
+          // Prueba sobre el registro y vuelta atrás inmediata: nunca deja una entrada falsa en los datos reales
+          const logsPrevios = StorageService.getAuditLogs();
+          const initialLogsCount = logsPrevios.length;
           StorageService.addAuditLog(testEmail, testAction, testEntity, testDetails);
 
           const updatedLogs = StorageService.getAuditLogs();
+          StorageService.saveAuditLogs(logsPrevios);
           const lastLog = updatedLogs[0];
 
           if (updatedLogs.length !== initialLogsCount + 1) {
@@ -568,6 +571,20 @@ export class SecurityTestRunner {
             rol: 'ROLE_DOCENTE',
           };
 
+          // La prueba trabaja sobre una COPIA: se guarda la sesión real y se restaura al final,
+          // para no cerrar la sesión de quien la ejecuta
+          const claves = ['sigc_bi_auth_user_v2', 'sigc_bi_session_type_v1', 'sigc_bi_last_activity_v1',
+                          'sigc_bi_session_token_v2', 'sigc_bi_logout_reason_v1', 'sigc_bi_logout_message_v1'];
+          const copiaSesion = claves.map(k => [k, sessionStorage.getItem(k)] as const);
+          const copiaLocal = claves.map(k => [k, localStorage.getItem(k)] as const);
+          const restaurar = () => {
+            copiaSesion.forEach(([k, v]) => { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); });
+            copiaLocal.forEach(([k, v]) => { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); });
+          };
+          try {
+          // Sin el token real durante la prueba: el cierre simulado no debe cerrar la sesión en el servidor
+          sessionStorage.removeItem('sigc_bi_session_token_v2');
+          localStorage.removeItem('sigc_bi_session_token_v2');
           // 1. Guardar como equipo compartido
           AuthService.persistSession(testUser, true);
           if (!AuthService.isSharedSession()) {
@@ -596,13 +613,13 @@ export class SecurityTestRunner {
             };
           }
 
-          // Limpiar tras el test
-          AuthService.logout();
-
           return {
             passed: true,
             message: 'Aislamiento en sessionStorage, auto-cierre y protección por inactividad en equipos compartidos verificados al 100%.',
           };
+          } finally {
+            restaurar();
+          }
         },
       },
     ];
