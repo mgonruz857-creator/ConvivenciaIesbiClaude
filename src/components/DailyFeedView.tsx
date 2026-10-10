@@ -688,7 +688,17 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
 
                       {/* Print Official Parte PDF */}
                       <button
-                        onClick={() => onPrintSingleParte(sancion)}
+                        onClick={() => {
+                          // Tras la llamada a la familia, imprimir el parte lo pasa a «Parte Impreso / Firma»
+                          if (sancion.estado_tramitacion === 'NOTIFICADO_TELEFONO') {
+                            onUpdateTramitacion(
+                              sancion.id_sancion,
+                              'PARTE_IMPRESO',
+                              sancion.observaciones_tramitacion || 'Parte impreso para la firma de la familia.'
+                            );
+                          }
+                          onPrintSingleParte(sancion);
+                        }}
                         title="Imprimir Parte Oficial de Sanción (Junta de Andalucía)"
                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-sky-600 hover:bg-sky-700 text-white transition-colors cursor-pointer"
                       >
@@ -772,7 +782,7 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
                 <div className="text-xl font-bold font-mono text-emerald-950 mt-1">
                   {statsDay.leves} partes
                 </div>
-                <div className="text-[10px] text-emerald-700 mt-0.5">Art. 32 Decreto 327/2010</div>
+                <div className="text-[10px] text-emerald-700 mt-0.5">Escala de puntos del centro</div>
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -780,7 +790,7 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
                 <div className="text-xl font-bold font-mono text-amber-950 mt-1">
                   {statsDay.graves} partes
                 </div>
-                <div className="text-[10px] text-amber-700 mt-0.5">Art. 33 Decreto 327/2010</div>
+                <div className="text-[10px] text-amber-700 mt-0.5">Escala de puntos del centro</div>
               </div>
 
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl">
@@ -788,7 +798,7 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
                 <div className="text-xl font-bold font-mono text-rose-950 mt-1">
                   {statsDay.muyGraves} partes
                 </div>
-                <div className="text-[10px] text-rose-700 mt-0.5">Art. 34 Decreto 327/2010</div>
+                <div className="text-[10px] text-rose-700 mt-0.5">Escala de puntos del centro</div>
               </div>
             </div>
 

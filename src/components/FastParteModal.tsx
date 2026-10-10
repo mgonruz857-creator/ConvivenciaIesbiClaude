@@ -57,6 +57,8 @@ interface FastParteModalProps {
   ) => { sancion: Sancion; alumnoActualizado: Alumno; saldoCero: boolean; alertaGrave: boolean };
   onPrintParte: (sancion: Sancion) => void;
   onDone: () => void;
+  /** Alumno/a ya elegido (por ejemplo, al pulsar «Poner Parte» en su carnet) */
+  alumnoInicialId?: string | null;
 }
 
 const GRUPOS_ORDEN: GrupoEducativo[] = LISTA_GRUPOS_OFICIALES.map(g => g.codigo);
@@ -111,7 +113,9 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
   onSubmitSancion,
   onPrintParte,
   onDone,
+  alumnoInicialId,
 }) => {
+  const alumnoInicial = alumnoInicialId ? alumnos.find(a => a.id_alumno === alumnoInicialId) : undefined;
   const isAdmin = AuthService.isAdmin(currentUser);
 
   // Docente que comunica / emite el parte (configurable si es Administrador / Equipo de Convivencia)
@@ -127,9 +131,9 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
 
   // 1. Grupo y Alumno
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoEducativo>(
-    (currentUser.tutor_de_grupo as GrupoEducativo) || '1ESO_A'
+    (alumnoInicial?.grupo as GrupoEducativo) || (currentUser.tutor_de_grupo as GrupoEducativo) || '1ESO_A'
   );
-  const [selectedAlumnoId, setSelectedAlumnoId] = useState<string>('');
+  const [selectedAlumnoId, setSelectedAlumnoId] = useState<string>(alumnoInicial?.id_alumno || '');
   const [searchAlumnoTerm, setSearchAlumnoTerm] = useState<string>('');
 
   // 2. Tipo de Conducta (LEVE / GRAVE / ACADÉMICO)
@@ -507,7 +511,7 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
                   </option>
                   <optgroup label="Claustro de Profesores">
                     {listaProfesoresOrdenada
-                      .filter(p => p.id_profesor !== currentUser.id_profesor)
+                      .filter(p => p.id_profesor !== currentUser.id_profesor && p.estado !== 'INACTIVO')
                       .map(p => (
                         <option key={p.id_profesor} value={p.id_profesor}>
                           {p.apellidos}, {p.nombre} — {p.departamento} {p.tutor_de_grupo ? `(Tutor ${p.tutor_de_grupo})` : ''}

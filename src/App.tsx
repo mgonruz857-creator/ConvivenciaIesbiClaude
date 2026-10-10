@@ -134,6 +134,8 @@ export default function App() {
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [profesores, setProfesores] = useState<Profesor[]>([]);
   const [sanciones, setSanciones] = useState<Sancion[]>([]);
+  // Alumno/a elegido al pulsar «Poner Parte» desde su carnet
+  const [alumnoParaParte, setAlumnoParaParte] = useState<string | null>(null);
   const [compensaciones, setCompensaciones] = useState<Compensacion[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [expedientes, setExpedientes] = useState<ExpedienteSancion[]>([]);
@@ -329,6 +331,7 @@ export default function App() {
       setCurrentView('imponer');
       return;
     }
+    setAlumnoParaParte(null);
     setCurrentView(view);
     GoogleDriveSyncService.pullFromGoogleDrive({ forceRefresh: true })
       .then((res) => {
@@ -495,7 +498,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCarnetInitialFilterEstado('CERO_PUNTOS');
+                      setCarnetInitialFilterEstado('SALDO_CERO');
                       setCarnetFocusedAlumnoId(a.id_alumno);
                       setCurrentView('carnet');
                     }}
@@ -510,7 +513,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => {
-                setCarnetInitialFilterEstado('CERO_PUNTOS');
+                setCarnetInitialFilterEstado('SALDO_CERO');
                 if (alumnosConCeroPuntos.length > 0) {
                   setCarnetFocusedAlumnoId(alumnosConCeroPuntos[0].id_alumno);
                 }
@@ -555,7 +558,9 @@ export default function App() {
             currentUser={currentUser}
             onSubmitSancion={handleImponerSancion}
             onPrintParte={(sancion) => setPrintableParte(sancion)}
+            alumnoInicialId={alumnoParaParte}
             onDone={() => {
+              setAlumnoParaParte(null);
               if (isAdmin) {
                 setCurrentView('feed');
               } else {
@@ -597,6 +602,7 @@ export default function App() {
             focusedAlumnoId={carnetFocusedAlumnoId}
             onClearFocusedAlumno={() => setCarnetFocusedAlumnoId(null)}
             onSelectAlumnoForParte={(idAlumno) => {
+              setAlumnoParaParte(idAlumno);
               setCurrentView('imponer');
             }}
             onPrintParte={(sancion) => setPrintableParte(sancion)}

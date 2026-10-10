@@ -445,7 +445,6 @@ export async function generateMemoriaConvivenciaPdf(
   const pageHeight = 297;
   const marginX = 14;
   const contentWidth = pageWidth - marginX * 2; // 182mm
-  const totalPages = stats.sancionesList.length > 0 ? 3 : 2;
 
   const drawHeader = (pageNum: number, title: string, subtitle?: string) => {
     let curY = 10;
@@ -512,7 +511,8 @@ export async function generateMemoriaConvivenciaPdf(
     doc.setFontSize(6);
     doc.setTextColor(148, 163, 184);
     doc.text(`SIGC-BI v2.0 · MEMORIA ANUAL CONVIVENCIA · CURSO ${stats.academicYear} · IES BLAS INFANTE (14007180)`, marginX, pageHeight - 6.5);
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - marginX, pageHeight - 6.5, { align: 'right' });
+    // El total se rellena al final (el anexo puede ocupar varias páginas)
+    doc.text(`Página ${pageNum} de {total_paginas}`, pageWidth - marginX - 4, pageHeight - 6.5, { align: 'right' });
   };
 
   // ==========================================
@@ -631,14 +631,14 @@ export async function generateMemoriaConvivenciaPdf(
   const colW3 = (contentWidth - 4) / 3;
   const colH3 = 24;
 
-  // Leves (Art. 32)
+  // Leves (1-3 pts)
   doc.setFillColor(254, 243, 199);
   doc.setDrawColor(251, 191, 36);
   doc.roundedRect(marginX, curY, colW3, colH3, 1, 1, 'FD');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(146, 64, 14);
-  doc.text('Conductas Leves (Art. 32)', marginX + 3, curY + 4.5);
+  doc.text('Conductas Leves (1-3 pts)', marginX + 3, curY + 4.5);
   doc.setFontSize(11);
   doc.text(`${stats.leves} partes (${pctLeves}%)`, marginX + 3, curY + 10.5);
   // Progress bar Leves
@@ -660,7 +660,7 @@ export async function generateMemoriaConvivenciaPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(153, 27, 27);
-  doc.text('Conductas Graves (Art. 34)', gX + 3, curY + 4.5);
+  doc.text('Conductas Graves (4-6 pts)', gX + 3, curY + 4.5);
   doc.setFontSize(11);
   doc.text(`${stats.graves} partes (${pctGraves}%)`, gX + 3, curY + 10.5);
   // Progress bar Graves
@@ -682,7 +682,7 @@ export async function generateMemoriaConvivenciaPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(107, 33, 168);
-  doc.text('Muy Graves / Cero Pts (Art. 35)', mgX + 3, curY + 4.5);
+  doc.text('Muy Graves (7-10 pts)', mgX + 3, curY + 4.5);
   doc.setFontSize(11);
   doc.text(`${stats.muyGraves} partes (${pctMuyGraves}%)`, mgX + 3, curY + 10.5);
   // Progress bar Muy Graves
@@ -957,12 +957,8 @@ export async function generateMemoriaConvivenciaPdf(
   doc.roundedRect(rX, curY, halfW, colBoxH, 1, 1, 'FD');
 
   let rY = curY + 4.5;
-  const rofList = stats.topRof || [
-    { codigo: 'Art. 32.a (Interrupción clase)', count: Math.round(stats.totalPartes * 0.4), puntos: Math.round(stats.totalPartes * 0.8) },
-    { codigo: 'Art. 32.b (Falta de respeto)', count: Math.round(stats.totalPartes * 0.3), puntos: Math.round(stats.totalPartes * 0.9) },
-    { codigo: 'Art. 34.a (Desobediencia grave)', count: Math.round(stats.totalPartes * 0.15), puntos: Math.round(stats.totalPartes * 0.6) },
-    { codigo: 'Art. 34.c (Uso indebido móvil)', count: Math.round(stats.totalPartes * 0.1), puntos: Math.round(stats.totalPartes * 0.4) },
-  ];
+  // Solo datos reales (nunca cifras de ejemplo en un documento oficial)
+  const rofList = stats.topRof || [];
 
   rofList.slice(0, 5).forEach((r) => {
     doc.setFont('helvetica', 'bold');
@@ -999,7 +995,7 @@ export async function generateMemoriaConvivenciaPdf(
     `1. Clima Escolar General: El ${stats.ratioCumplimiento}% del alumnado ha mantenido su saldo íntegro de carnet por puntos sin registrar incidencias.\n` +
     `2. Enfoque Restaurativo: Se han restituido +${stats.puntosRestituidos} puntos mediante compromisos pedagógicos y tareas a la comunidad escolar.\n` +
     `3. Aula de Convivencia (PAC): Se han derivado ${stats.pacDerivados} expedientes con una tasa de comparecencia efectiva del ${stats.pacTasaComparecencia}%.\n` +
-    `4. Propuesta Preventiva: Reforzar la presencia en pasillos durante cambios de hora y dinamizar actividades alternativas en el patio de recreo.`;
+    `4. Propuestas de mejora: a completar por el Equipo de Convivencia.`;
 
   doc.text(conclusionesText, marginX + 3.5, curY + 4.8);
   curY += 28;
@@ -1033,31 +1029,45 @@ export async function generateMemoriaConvivenciaPdf(
   // --- PÁGINA 3: ANEXO OFICIAL DE EXPEDIENTES DISCIPLINARIOS Y TRAZABILIDAD ---
   // =========================================================================
   if (stats.sancionesList.length > 0) {
+    // Anexo con TODOS los partes (tantas páginas como hagan falta)
+    let pagina = 3;
+    const cabeceraTabla = () => {
+      doc.setFillColor(3, 105, 161);
+      doc.setDrawColor(3, 105, 161);
+      doc.rect(marginX, curY, contentWidth, 5.5, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Expediente', marginX + 2, curY + 3.8);
+      doc.text('Fecha', marginX + 23, curY + 3.8);
+      doc.text('Alumno/a', marginX + 41, curY + 3.8);
+      doc.text('Grupo', marginX + 86, curY + 3.8);
+      doc.text('Profesor/a', marginX + 104, curY + 3.8);
+      doc.text('Lugar', marginX + 140, curY + 3.8);
+      doc.text('Pts', marginX + 158, curY + 3.8);
+      doc.text('PAC', marginX + 166, curY + 3.8);
+      doc.text('Estado', marginX + 174, curY + 3.8);
+      curY += 5.5;
+    };
+    const ESTADOS: Record<string, string> = {
+      PENDIENTE_NOTIFICACION: 'Pend. llamada',
+      NOTIFICADO_TELEFONO: 'Llamada',
+      PARTE_IMPRESO: 'Impreso',
+      RESUELTO: 'Completado',
+    };
+
     doc.addPage();
-    curY = drawHeader(3, 'ANEXO OFICIAL: REGISTRO DE EXPEDIENTES Y TRAZABILIDAD DISCIPLINARIA');
+    curY = drawHeader(pagina, 'ANEXO OFICIAL: REGISTRO DE EXPEDIENTES Y TRAZABILIDAD DISCIPLINARIA');
+    cabeceraTabla();
 
-    // Tabla de Expedientes
-    doc.setFillColor(3, 105, 161);
-    doc.setDrawColor(3, 105, 161);
-    doc.rect(marginX, curY, contentWidth, 5.5, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(255, 255, 255);
-    doc.text('Expediente', marginX + 2, curY + 3.8);
-    doc.text('Fecha', marginX + 23, curY + 3.8);
-    doc.text('Alumno/a', marginX + 41, curY + 3.8);
-    doc.text('Grupo', marginX + 86, curY + 3.8);
-    doc.text('Profesor/a', marginX + 104, curY + 3.8);
-    doc.text('Lugar', marginX + 140, curY + 3.8);
-    doc.text('Pts', marginX + 158, curY + 3.8);
-    doc.text('PAC', marginX + 166, curY + 3.8);
-    doc.text('Estado', marginX + 174, curY + 3.8);
-
-    curY += 5.5;
-
-    const maxRowsPage3 = 36;
-    stats.sancionesList.slice(0, maxRowsPage3).forEach((s, idx) => {
+    stats.sancionesList.forEach((s, idx) => {
+      if (curY > pageHeight - 18) {
+        drawFooter(pagina);
+        pagina++;
+        doc.addPage();
+        curY = drawHeader(pagina, 'ANEXO OFICIAL (continuación)');
+        cabeceraTabla();
+      }
       const isAlt = idx % 2 === 1;
       if (isAlt) {
         doc.setFillColor(248, 250, 252);
@@ -1066,15 +1076,16 @@ export async function generateMemoriaConvivenciaPdf(
       const alm = alumnoMap.get(s.id_alumno);
       const alumnoNombre = alm ? `${alm.apellidos}, ${alm.nombre}` : s.id_alumno;
       const almTrunc = alumnoNombre.length > 22 ? alumnoNombre.slice(0, 20) + '...' : alumnoNombre;
-      const profTrunc = s.nombre_profesor.length > 18 ? s.nombre_profesor.slice(0, 16) + '...' : s.nombre_profesor;
+      const nombreProf = s.nombre_profesor || '';
+      const profTrunc = nombreProf.length > 18 ? nombreProf.slice(0, 16) + '...' : nombreProf;
       const locTrunc = (s.ubicacion || 'Aula').length > 11 ? (s.ubicacion || 'Aula').slice(0, 9) + '..' : (s.ubicacion || 'Aula');
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5.8);
       doc.setTextColor(15, 23, 42);
 
-      doc.text(s.numero_expediente, marginX + 2, curY + 3.6);
-      doc.text(s.fecha, marginX + 23, curY + 3.6);
+      doc.text(s.numero_expediente || '', marginX + 2, curY + 3.6);
+      doc.text(s.fecha || '', marginX + 23, curY + 3.6);
       doc.text(almTrunc, marginX + 41, curY + 3.6);
       doc.text(alm ? alm.grupo : '-', marginX + 86, curY + 3.6);
       doc.text(profTrunc, marginX + 104, curY + 3.6);
@@ -1087,13 +1098,15 @@ export async function generateMemoriaConvivenciaPdf(
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(15, 23, 42);
       doc.text(s.derivado_pac ? 'SÍ' : 'NO', marginX + 166, curY + 3.6);
-      doc.text(s.estado_tramitacion || 'OK', marginX + 174, curY + 3.6);
+      doc.text(ESTADOS[s.estado_tramitacion || ''] || s.estado_tramitacion || '-', marginX + 174, curY + 3.6);
 
       curY += 5.2;
     });
 
-    drawFooter(3);
+    drawFooter(pagina);
   }
+
+  doc.putTotalPages('{total_paginas}');
 
   // Download logic
   const filename = options?.customFileName || `Memoria_Convivencia_IES_Blas_Infante_${stats.academicYear.replace('/', '_')}.pdf`;

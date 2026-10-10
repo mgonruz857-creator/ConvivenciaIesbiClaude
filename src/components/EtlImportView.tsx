@@ -2519,10 +2519,10 @@ El Amrani Youssef,4º ESO D`;
                 <div className="bg-white p-2.5 rounded-lg border border-sky-200/80 space-y-1">
                   <div className="font-bold text-slate-900 flex items-center justify-between">
                     <span>3. Rol en el Centro</span>
-                    <span className="text-[10px] text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-mono">Docente / Admin / PAC</span>
+                    <span className="text-[10px] text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-mono">Docente / Convivencia</span>
                   </div>
                   <p className="text-[11px] text-slate-600">
-                    <code className="font-mono text-slate-800">Docente</code>, <code className="font-mono text-slate-800">Guardia PAC</code> o <code className="font-mono text-slate-800">Administrador Convivencia</code>.
+                    <code className="font-mono text-slate-800">Docente</code> o <code className="font-mono text-slate-800">Convivencia</code> (también vale Jefatura, Dirección o Admin). La guardia del Aula PAC no necesita un rol propio: cualquier docente puede atenderla.
                   </p>
                 </div>
               </div>

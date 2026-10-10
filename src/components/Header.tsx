@@ -227,9 +227,6 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span className="hidden sm:inline font-semibold">Tests RGPD</span>
-                <span className="text-emerald-800 text-[10px] font-bold bg-emerald-100 px-1 py-0.2 rounded border border-emerald-300">
-                  100% OK
-                </span>
               </button>
             )}
 

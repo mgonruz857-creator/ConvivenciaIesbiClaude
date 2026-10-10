@@ -1632,21 +1632,21 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 <div className="text-xl font-bold font-mono text-emerald-950 mt-1">
                   {statsA.leves} <span className="text-xs font-normal text-emerald-700">({statsA.totalPartes > 0 ? Math.round((statsA.leves / statsA.totalPartes) * 100) : 0}%)</span>
                 </div>
-                <div className="text-[10px] text-emerald-700 mt-0.5">Art. 32 Decreto 327/2010</div>
+                <div className="text-[10px] text-emerald-700 mt-0.5">Escala de puntos del centro</div>
               </div>
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="text-[11px] font-bold text-amber-800 uppercase">Graves (4-6 pts)</div>
                 <div className="text-xl font-bold font-mono text-amber-950 mt-1">
                   {statsA.graves} <span className="text-xs font-normal text-amber-700">({statsA.totalPartes > 0 ? Math.round((statsA.graves / statsA.totalPartes) * 100) : 0}%)</span>
                 </div>
-                <div className="text-[10px] text-amber-700 mt-0.5">Art. 33 Decreto 327/2010</div>
+                <div className="text-[10px] text-amber-700 mt-0.5">Escala de puntos del centro</div>
               </div>
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
                 <div className="text-[11px] font-bold text-rose-800 uppercase">Muy Graves (7-10 pts)</div>
                 <div className="text-xl font-bold font-mono text-rose-950 mt-1">
                   {statsA.muyGraves} <span className="text-xs font-normal text-rose-700">({statsA.totalPartes > 0 ? Math.round((statsA.muyGraves / statsA.totalPartes) * 100) : 0}%)</span>
                 </div>
-                <div className="text-[10px] text-rose-700 mt-0.5">Art. 34 Decreto 327/2010</div>
+                <div className="text-[10px] text-rose-700 mt-0.5">Escala de puntos del centro</div>
               </div>
             </div>
 
