@@ -13,6 +13,7 @@ const SESSION_TYPE_KEY = 'sigc_bi_session_type_v1';
 const LAST_ACTIVITY_KEY = 'sigc_bi_last_activity_v1';
 const LOGOUT_REASON_KEY = 'sigc_bi_logout_reason_v1';
 const TOKEN_KEY = 'sigc_bi_session_token_v2';
+const LOGOUT_MSG_KEY = 'sigc_bi_logout_message_v1';
 
 // Restos de la versión 1 (contraseñas guardadas en el navegador): se eliminan al cargar
 try {
@@ -315,7 +316,7 @@ export class AuthService {
    * Si el cierre fue por inactividad automática (15 min), guarda el motivo para que la
    * pantalla de inicio de sesión pueda informar al profesor amigablemente.
    */
-  static logout(reason: 'MANUAL' | 'INACTIVITY' = 'MANUAL'): void {
+  static logout(reason: 'MANUAL' | 'INACTIVITY' | 'SERVIDOR' | 'SIN_SESION' = 'MANUAL', mensaje?: string): void {
     const token = this.getToken();
     if (token) {
       llamarApi('logout', { token }).catch(() => {});
@@ -331,10 +332,13 @@ export class AuthService {
       localStorage.removeItem(SESSION_TYPE_KEY);
       localStorage.removeItem(LAST_ACTIVITY_KEY);
 
-      if (reason === 'INACTIVITY') {
-        sessionStorage.setItem(LOGOUT_REASON_KEY, 'INACTIVITY');
-      } else {
+      if (reason === 'MANUAL') {
         sessionStorage.removeItem(LOGOUT_REASON_KEY);
+        sessionStorage.removeItem(LOGOUT_MSG_KEY);
+      } else {
+        sessionStorage.setItem(LOGOUT_REASON_KEY, reason);
+        if (mensaje) sessionStorage.setItem(LOGOUT_MSG_KEY, mensaje);
+        else sessionStorage.removeItem(LOGOUT_MSG_KEY);
       }
     } catch {
       // Ignorar excepciones de storage
@@ -344,13 +348,14 @@ export class AuthService {
   /**
    * Lee y consume el motivo del último cierre de sesión (para mostrar aviso al usuario)
    */
-  static consumeLogoutReason(): 'INACTIVITY' | null {
+  /** Motivo (y mensaje del servidor, si lo hubo) del último cierre de sesión automático. */
+  static consumeLogoutReason(): { motivo: 'INACTIVITY' | 'SERVIDOR' | 'SIN_SESION'; mensaje?: string } | null {
     try {
       const reason = sessionStorage.getItem(LOGOUT_REASON_KEY);
-      if (reason === 'INACTIVITY') {
-        sessionStorage.removeItem(LOGOUT_REASON_KEY);
-        return 'INACTIVITY';
-      }
+      const mensaje = sessionStorage.getItem(LOGOUT_MSG_KEY) || undefined;
+      sessionStorage.removeItem(LOGOUT_REASON_KEY);
+      sessionStorage.removeItem(LOGOUT_MSG_KEY);
+      if (reason === 'INACTIVITY' || reason === 'SERVIDOR' || reason === 'SIN_SESION') return { motivo: reason, mensaje };
       return null;
     } catch {
       return null;

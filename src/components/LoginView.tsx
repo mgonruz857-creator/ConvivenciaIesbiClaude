@@ -52,11 +52,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
   // Comprobar si hubo un cierre de sesión automático por inactividad
   useEffect(() => {
-    const reason = AuthService.consumeLogoutReason();
-    if (reason === 'INACTIVITY') {
+    const r = AuthService.consumeLogoutReason();
+    if (r?.motivo === 'INACTIVITY') {
       setInactivityNotice(
-        '🔒 Su sesión se ha cerrado automáticamente tras 15 minutos de inactividad para garantizar la protección de datos en este equipo compartido (RGPD/ENS).'
+        '🔒 Su sesión se ha cerrado automáticamente por inactividad para garantizar la protección de datos (RGPD/ENS).'
       );
+    } else if (r?.motivo === 'SERVIDOR') {
+      setInactivityNotice('🔒 El servidor ha cerrado la sesión: ' + (r.mensaje || 'la sesión ya no es válida.') + ' Vuelva a entrar.');
+    } else if (r?.motivo === 'SIN_SESION') {
+      setInactivityNotice('🔒 La sesión se ha cerrado en este navegador (por ejemplo, desde otra pestaña). Vuelva a entrar.');
     }
   }, []);
 

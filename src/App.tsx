@@ -119,8 +119,9 @@ export default function App() {
 
   // Si el servidor indica que la sesión ya no es válida, volver a la pantalla de acceso
   useEffect(() => {
-    const alCaducar = () => {
-      AuthService.logout('MANUAL');
+    const alCaducar = (e: Event) => {
+      const mensaje = (e as CustomEvent).detail;
+      AuthService.logout('SERVIDOR', typeof mensaje === 'string' ? mensaje : undefined);
       StorageService.clearMemoryCacheForFreshLogin();
       setCurrentUser(null);
     };
@@ -180,7 +181,15 @@ export default function App() {
     // Verificación periódica del estado de la sesión cada 2 segundos
     const checkInterval = setInterval(() => {
       const status = AuthService.getSessionStatus();
-      if (!status.isAuthenticated || status.remainingSeconds <= 0) {
+      if (!status.isAuthenticated) {
+        // La sesión ya no está en este navegador (cerrada por el servidor o desde otra pestaña):
+        // no es inactividad; se conserva el motivo real si ya se anotó
+        if (!sessionStorage.getItem('sigc_bi_logout_reason_v1')) AuthService.logout('SIN_SESION');
+        StorageService.clearMemoryCacheForFreshLogin();
+        setCurrentUser(null);
+        return;
+      }
+      if (status.remainingSeconds <= 0) {
         handleLogout('INACTIVITY');
         return;
       }
