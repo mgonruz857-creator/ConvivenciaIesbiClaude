@@ -305,9 +305,11 @@ export default function App() {
   }, [alumnos]);
 
   // Students with 0 points (V0 minimum alert to Jefatura/Convivencia)
+  // Franja roja: solo lo pendiente de tramitar (0 puntos, sin expediente de sanción abierto
+  // tras su último parte y sin estar de baja). Los que ya están en trámite siguen en «Sanciones».
   const alumnosConCeroPuntos = useMemo(() => {
-    return alumnos.filter(a => a.puntos_actuales === 0);
-  }, [alumnos]);
+    return StorageService.getAlumnosPendientesDeExpediente();
+  }, [alumnos, sanciones, expedientes]);
 
   const handleLoginSuccess = (user: Profesor) => {
     refreshAllData();
@@ -500,7 +502,7 @@ export default function App() {
           <div className="flex items-center gap-2 max-w-7xl mx-auto flex-1 flex-wrap">
             <AlertOctagon className="w-4 h-4 text-rose-300 shrink-0" />
             <span>
-              <strong>Aviso a Jefatura de Estudios / Convivencia (V0):</strong> Se registran {alumnosConCeroPuntos.length} alumno(s) con saldo 0 puntos para su valoración disciplinaria:{' '}
+              <strong>Aviso a Jefatura de Estudios / Convivencia (V0):</strong> {alumnosConCeroPuntos.length} alumno(s) con 0 puntos sin expediente de sanción abierto:{' '}
               {alumnosConCeroPuntos.map((a, idx) => (
                 <span key={a.id_alumno}>
                   {idx > 0 && ', '}
