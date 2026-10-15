@@ -26,6 +26,11 @@ export async function llamarApi(accion: string, datos: Record<string, any> = {},
   let r: RespuestaApi = { ok: false };
   for (let intento = 1; intento <= 3; intento++) {
     r = await llamarApiUnaVez(accion, datos, timeoutMs);
+    // Página de error de Google en lugar de la respuesta del servidor: se repite una vez.
+    if (r && r.codigo === 'RESPUESTA_INVALIDA' && intento < 2) {
+      await new Promise((res) => setTimeout(res, 1500));
+      continue;
+    }
     const llegoVacia = r && r.ok && (r as any).servicio === 'SIGC-BI' && (r as any).accion === undefined;
     if (!llegoVacia) return r;
     await new Promise((res) => setTimeout(res, 400 * intento));
@@ -53,7 +58,14 @@ async function llamarApiUnaVez(accion: string, datos: Record<string, any>, timeo
     try {
       json = JSON.parse(texto);
     } catch {
-      return { ok: false, codigo: 'RESPUESTA_INVALIDA', error: 'El servidor de datos ha devuelto una respuesta no válida.' };
+      const detalle = resumirRespuestaNoJson(respuesta.status, texto);
+      console.warn('[API] Respuesta no válida del servidor (' + accion + '):', detalle);
+      return {
+        ok: false,
+        codigo: 'RESPUESTA_INVALIDA',
+        detalle,
+        error: 'El servidor de datos ha devuelto una respuesta no válida. Vuelva a intentarlo en unos segundos. (Detalle: ' + detalle + ')',
+      };
     }
     if (!json.ok && json.codigo === 'NO_AUTH' && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent(EVENTO_SESION_CADUCADA, { detail: json.error }));
@@ -71,4 +83,15 @@ async function llamarApiUnaVez(accion: string, datos: Record<string, any>, timeo
   } finally {
     clearTimeout(temporizador);
   }
+}
+
+/** Resumen corto de una respuesta que no es JSON (normalmente una página de error de Google). */
+function resumirRespuestaNoJson(estado: number, texto: string): string {
+  const t = String(texto || '');
+  if (!t.trim()) return 'HTTP ' + estado + ', respuesta vacía';
+  const titulo = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(t);
+  const cuerpo = t.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const partes = [titulo ? titulo[1].trim() : '', cuerpo.slice(0, 160)].filter(Boolean);
+  return 'HTTP ' + estado + ': ' + partes.join(' – ').slice(0, 220);
 }
