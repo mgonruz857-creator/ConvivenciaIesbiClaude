@@ -297,10 +297,10 @@ function aplicarTextosRecuperados() {
 // ------------------------------------------------------------------ Resumen diario para tutores
 
 /**
- * A las 14:55, cada tutor/a con partes NUEVOS de su grupo recibe un correo con el número de partes
- * y el grupo (sin ningún dato del alumnado) y un enlace a la app. Quien no tenga partes nuevos no
- * recibe nada. "Nuevo" = no incluido en ningún resumen anterior (los puestos después de las 14:55,
- * o que lleguen tarde desde un dispositivo sin conexión, van en el resumen siguiente).
+ * De lunes a viernes a las 8:30, cada tutor/a con partes NUEVOS de su grupo recibe un correo con el
+ * número de partes, el día y el grupo (sin ningún dato del alumnado) y un enlace a la app. Quien no
+ * tenga partes nuevos no recibe nada. "Nuevo" = no incluido en ningún resumen anterior: el del lunes
+ * recoge los del viernes y el fin de semana; los que lleguen tarde van en el resumen siguiente.
  *
  * Activación (una sola vez, desde el editor): elegir activarResumenDiario y pulsar "Ejecutar";
  * Google pedirá permiso para enviar correos y programar tareas. Para pararlo: desactivarResumenDiario.
@@ -308,10 +308,26 @@ function aplicarTextosRecuperados() {
  */
 var URL_APP = '__URL_APP__';
 var ES_PRUEBAS = __ES_PRUEBAS__;          // en PRUEBAS todos los correos van solo al administrador
-var HORA_RESUMEN = 14, MINUTO_RESUMEN = 55;
+var HORA_RESUMEN = 8, MINUTO_RESUMEN = 30;
 var ARCHIVO_CONTROL_RESUMEN = 'CONTROL_RESUMEN_TUTORES.json';
 
 function hoyMadrid() { return Utilities.formatDate(new Date(), 'Europe/Madrid', 'yyyy-MM-dd'); }
+
+/** 0 = domingo ... 6 = sábado, de una fecha 'yyyy-MM-dd' */
+function diaSemana(f) {
+  var p = f.split('-');
+  return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10))).getUTCDay();
+}
+function esLaborable(f) { var d = diaSemana(f); return d >= 1 && d <= 5; }
+var NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+/** '2026-10-16' -> 'viernes 16/10' */
+function nombreDia(f) { var p = f.split('-'); return NOMBRES_DIA[diaSemana(f)] + ' ' + p[2] + '/' + p[1]; }
+function fechaDelParte(x) {
+  var f = String(x.fecha || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;
+  var t = String(x.timestamp || '').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(t) ? t : '';
+}
 
 function leerControlResumen() {
   var f = archivoEnCarpeta(ARCHIVO_CONTROL_RESUMEN);
@@ -325,23 +341,28 @@ function guardarControlResumen(control, datos) {
   else DriveApp.getFolderById(CARPETA_ID).createFile(ARCHIVO_CONTROL_RESUMEN, texto, MimeType.PLAIN_TEXT);
 }
 
-/** Partes nuevos agrupados por tutor/a: [{ email, nombre, grupo, n }] */
+/** Partes nuevos agrupados por tutor/a: [{ email, nombre, grupo, n, fechas }] */
 function calcularResumenTutores(db, avisados) {
   var ya = {};
   (avisados || []).forEach(function (id) { ya[id] = true; });
   var grupoDe = {};
   db.alumnos.forEach(function (a) { if (a && a.id_alumno) grupoDe[a.id_alumno] = a.grupo || ''; });
-  var porGrupo = {};
+  var porGrupo = {}, fechasGrupo = {};
   db.sanciones.forEach(function (x) {
     if (!x || !x.id_sancion || ya[x.id_sancion]) return;
     var g = grupoDe[x.id_alumno];
-    if (g) porGrupo[g] = (porGrupo[g] || 0) + 1;
+    if (!g) return;
+    porGrupo[g] = (porGrupo[g] || 0) + 1;
+    var f = fechaDelParte(x);
+    fechasGrupo[g] = fechasGrupo[g] || {};
+    fechasGrupo[g][f] = true;
   });
   var lista = [];
   db.profesores.forEach(function (p) {
     if (!p || !p.email || p.estado === 'INACTIVO' || !p.tutor_de_grupo) return;
     var n = porGrupo[p.tutor_de_grupo];
-    if (n) lista.push({ email: norm(p.email), nombre: String(p.nombre || '').trim(), grupo: p.tutor_de_grupo, n: n });
+    if (n) lista.push({ email: norm(p.email), nombre: String(p.nombre || '').trim(), grupo: p.tutor_de_grupo, n: n,
+                        fechas: Object.keys(fechasGrupo[p.tutor_de_grupo] || {}).sort() });
   });
   return lista;
 }
@@ -351,12 +372,21 @@ function escaparHtml(t) {
 }
 
 function textoResumen(t) {
-  var partes = t.n === 1 ? '1 parte nuevo' : t.n + ' partes nuevos';
+  var partes = t.n === 1 ? '1 parte' : t.n + ' partes';
   var saludo = t.nombre ? 'Hola, ' + t.nombre + ':' : 'Hola:';
-  var frase = 'Se ha' + (t.n === 1 ? '' : 'n') + ' registrado ' + partes + ' en su tutoría (' + t.grupo + ') desde el último aviso.';
+  var fechas = (t.fechas || []).filter(function (f) { return f; });
+  var enTutoria = ' en su tutoría (' + t.grupo + ').';
+  var frase;
+  if (fechas.length === 1 && fechas.length === (t.fechas || []).length) {
+    frase = 'El ' + nombreDia(fechas[0]) + ' se registr' + (t.n === 1 ? 'ó ' : 'aron ') + partes + enTutoria;
+  } else if (fechas.length) {
+    frase = 'Desde el ' + nombreDia(fechas[0]) + ' se ha' + (t.n === 1 ? '' : 'n') + ' registrado ' + partes + enTutoria;
+  } else {
+    frase = 'Desde el último aviso se ha' + (t.n === 1 ? '' : 'n') + ' registrado ' + partes + enTutoria;
+  }
   var cierre = 'Puede consultarlos en la app, en la sección «Mi Tutoría»:';
   return {
-    asunto: 'SIGC-BI · ' + partes + ' en su tutoría (' + t.grupo + ')',
+    asunto: 'SIGC-BI · ' + (t.n === 1 ? '1 parte nuevo' : t.n + ' partes nuevos') + ' en su tutoría (' + t.grupo + ')',
     texto: saludo + '\n\n' + frase + '\n' + cierre + '\n' + URL_APP +
       '\n\nEste correo no contiene datos del alumnado. Se envía de forma automática solo cuando hay partes nuevos.\nIES Blas Infante · Convivencia',
     html: '<p>' + escaparHtml(saludo) + '</p><p>' + escaparHtml(frase) + '<br>' + escaparHtml(cierre) + '</p>' +
@@ -366,7 +396,7 @@ function textoResumen(t) {
 }
 
 /**
- * Lo ejecuta Google a las 14:55 (tarea programada). También se puede ejecutar a mano desde el editor:
+ * Lo ejecuta Google a las 8:30 de lunes a viernes (tarea programada). También se puede ejecutar a mano desde el editor:
  * a mano se envía siempre (aunque ya se haya enviado hoy), pero solo de los partes aún no avisados.
  * Si el correo de una tutoría no sale, sus partes siguen pendientes para el siguiente envío.
  */
@@ -375,7 +405,7 @@ function enviarResumenTutores(e) {
   if (automatico) borrarTareas('enviarResumenTutores');   // la tarea de hoy era de un solo uso
   var props = propiedades();
   var hoy = hoyMadrid();
-  if (automatico && props.getProperty('RESUMEN_ULTIMO_DIA') === hoy) return;
+  if (automatico && (props.getProperty('RESUMEN_ULTIMO_DIA') === hoy || !esLaborable(hoy))) return;
   var db = leerDbDeDrive();
   var control = leerControlResumen();
   if (!control) {                                 // sin control: no se avisa del histórico
@@ -418,12 +448,13 @@ function enviarResumenTutores(e) {
   }
 }
 
-/** Cada día (hacia las 12-13 h) deja programado el envío de las 14:55. */
+/** Cada día (hacia las 6-7 h) deja programado el envío de las 8:30, solo de lunes a viernes. */
 function programarResumenDiario() {
   borrarTareas('enviarResumenTutores');
   var ahora = new Date();
+  if (!esLaborable(hoyMadrid())) return;
   var hoy = hoyMadrid().split('-');
-  // 14:55 en hora de Madrid (la del proyecto puede ser otra): se calcula con el desfase actual
+  // 8:30 en hora de Madrid (la del proyecto puede ser otra): se calcula con el desfase actual
   var desfase = parseInt(Utilities.formatDate(ahora, 'Europe/Madrid', 'Z'), 10);   // p. ej. 200 = +02:00
   var minutosUtc = HORA_RESUMEN * 60 + MINUTO_RESUMEN - (Math.floor(desfase / 100) * 60 + desfase % 100);
   var cuando = new Date(Date.UTC(parseInt(hoy[0], 10), parseInt(hoy[1], 10) - 1, parseInt(hoy[2], 10), 0, minutosUtc));
@@ -445,14 +476,14 @@ function activarResumenDiario() {
       'https://www.googleapis.com/auth/script.scriptapp']);
   }
   borrarTareas('programarResumenDiario');
-  ScriptApp.newTrigger('programarResumenDiario').timeBased().everyDays(1).atHour(12).inTimezone('Europe/Madrid').create();
+  ScriptApp.newTrigger('programarResumenDiario').timeBased().everyDays(1).atHour(6).inTimezone('Europe/Madrid').create();
   if (!leerControlResumen()) {
     var db = leerDbDeDrive();
     guardarControlResumen(null, { avisados: db.sanciones.map(function (x) { return x.id_sancion; }), creado: new Date().toISOString() });
   }
   propiedades().deleteProperty('RESUMEN_ULTIMO_DIA');
   programarResumenDiario();
-  Logger.log('Resumen diario activado: cada día a las ' + HORA_RESUMEN + ':' + MINUTO_RESUMEN + ' (hora de Madrid).' +
+  Logger.log('Resumen diario activado: de lunes a viernes a las ' + HORA_RESUMEN + ':' + MINUTO_RESUMEN + ' (hora de Madrid).' +
     (ES_PRUEBAS ? ' Entorno de PRUEBAS: los correos llegan solo a ' + ADMIN_INICIAL + '.' : ''));
 }
 
