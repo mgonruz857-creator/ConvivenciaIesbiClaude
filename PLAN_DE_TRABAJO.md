@@ -130,16 +130,15 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       El tutor/a ve en Mi Tutoría las sanciones de su grupo y el estado de los trámites (solo lectura).
       El PDF solo se puede generar con los 4 trámites marcados (decisión de Miguel Ángel). Acceso directo
       desde el aviso rojo de 0 puntos ("Abrir expediente de sanción").
-- [~] **Resumen diario por correo a tutores (8:30, lunes a viernes; el del lunes recoge viernes y fin de semana)**: solo a tutores activos con partes NUEVOS en su grupo
+- [x] **Resumen diario por correo a tutores (8:30, lunes a viernes; el del lunes recoge viernes y fin de semana)**: solo a tutores activos con partes NUEVOS en su grupo
       (número + día + grupo + enlace a la app, sin datos del alumnado); festivos entre semana: se envía igual (decisión de Miguel Ángel);
       Jefatura no recibe resumen. Funciones de editor: `activarResumenDiario`, `probarResumenTutores`,
       `enviarResumenTutores`, `desactivarResumenDiario`; control en `CONTROL_RESUMEN_TUTORES.json`.
-      ✅ Probado en PRUEBAS a las 14:55 (19/10/2026); cambiado a las 8:30 el mismo día (falta pegarlo en pruebas y volver a ejecutar activarResumenDiario). ⏳ Pendiente pasarlo a producción cuando lo diga Miguel Ángel:
-      pegar el servidor de producción en la cuenta 14007180, nueva versión de la implementación, ejecutar
-      `activarResumenDiario` marcando TODAS las casillas de permisos; avisar antes al profesorado (perfil con su grupo).
-- [~] **Aviso en la app de partes nuevos en la tutoría**: franja «Hay N partes nuevos en tu tutoría…» con botón
+      ✅ Probado en PRUEBAS y EN PRODUCCIÓN desde el 19/10/2026 (16:20): servidor pegado en la cuenta 14007180,
+      nueva versión de …HimLNQ y `activarResumenDiario` ejecutado. Primer resumen real: 20/10 a las 8:30.
+- [x] **Aviso en la app de partes nuevos en la tutoría**: franja «Hay N partes nuevos en tu tutoría…» con botón
       «Ver en Mi Tutoría»; allí se marcan como «Nuevo». Desaparece al entrar en Mi Tutoría; lo visto se guarda en el
       servidor (propiedad TUT_VISTOS_<correo>) y vale para todos los dispositivos; el correo no cuenta como visto; al
       estrenarlo (o al cambiar de grupo) lo existente cuenta como visto. Necesita nueva versión de la implementación.
-      ✅ Probado en PRUEBAS (19/10/2026). ⏳ Pendiente pasar a producción junto con el resumen de las 8:30.
+      ✅ Probado en PRUEBAS y EN PRODUCCIÓN desde el 19/10/2026.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
