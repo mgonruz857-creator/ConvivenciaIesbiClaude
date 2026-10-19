@@ -21,6 +21,7 @@ interface ConfigDrive {
   nombreCarpeta: string;
   archivoDb: string;
   nombreUnidad: string;
+  urlApp: string;
 }
 
 const CONFIG: Record<Entorno, ConfigDrive> = {
@@ -32,6 +33,7 @@ const CONFIG: Record<Entorno, ConfigDrive> = {
     nombreCarpeta: 'SIGC_PRUEBAS',
     archivoDb: '00_SIGC_BD_PRUEBAS.json',
     nombreUnidad: 'Entorno de PRUEBAS (datos ficticios)',
+    urlApp: 'https://mgonruz857-creator.github.io/ConvivenciaIesbiClaude/',
   },
   PRODUCCION: {
     urlApi:
@@ -41,6 +43,7 @@ const CONFIG: Record<Entorno, ConfigDrive> = {
     nombreCarpeta: 'CONVIVENCIA_IES_BLAS_INFANTE',
     archivoDb: '00_SIGC_BD_CENTRO_BLAS_INFANTE.json',
     nombreUnidad: 'Unidad Compartida Convivencia - IES Blas Infante',
+    urlApp: 'https://convivenciaiesbi.github.io/',
   },
 };
 
@@ -53,5 +56,7 @@ export const CARPETA_DRIVE_ID: string = ACTUAL.carpetaId;
 export const NOMBRE_CARPETA_DRIVE: string = ACTUAL.nombreCarpeta;
 export const ARCHIVO_DB_DRIVE: string = ACTUAL.archivoDb;
 export const NOMBRE_UNIDAD_DRIVE: string = ACTUAL.nombreUnidad;
+/** Dirección de la app (para el enlace de los correos). */
+export const URL_APP: string = ACTUAL.urlApp;
 /** Prefijo para copias de seguridad descargadas (sin la extensión .json). */
 export const PREFIJO_BACKUP: string = ARCHIVO_DB_DRIVE.replace(/\.json$/, '');

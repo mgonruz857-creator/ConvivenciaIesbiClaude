@@ -39,7 +39,7 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
       computeDigest: (_a: string, t: any) => (llamadasCifrado++, 0) || Array.from(crypto.createHash('sha256').update(typeof t === 'string' ? Buffer.from(t, 'utf8') : Buffer.from(t.map((b: number) => b & 255))).digest()).map(b => b > 127 ? b - 256 : b),
       computeHmacSha256Signature: (v: string, k: string) => (llamadasCifrado++, 0) || Array.from(crypto.createHmac('sha256', Buffer.from(k, 'utf8')).update(v, 'utf8').digest()).map(b => b > 127 ? b - 256 : b),
       base64Encode: (bytes: number[]) => Buffer.from(bytes.map(b => b & 255)).toString('base64'),
-      formatDate: (d: Date, _z: string, f: string) => f === 'yyyy-MM-dd' ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(d) : d.toISOString().slice(0, 16).replace('T', '_').replace(':', '-') },
+      formatDate: (d: Date, _z: string, f: string) => f === 'Z' ? (() => { const o = Math.round((new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Madrid' })).getTime() - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' })).getTime()) / 60000); return '+' + String(Math.floor(o / 60)).padStart(2, '0') + String(o % 60).padStart(2, '0'); })() : f === 'yyyy-MM-dd' ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(d) : d.toISOString().slice(0, 16).replace('T', '_').replace(':', '-') },
     MimeType: { PLAIN_TEXT: 'text/plain' },
     DriveApp: {
       getFileById: (id: string) => { const k = id.replace(/^id-/, ''); if (archivos[k] === undefined) throw new Error('No existe'); return archivo(k); },

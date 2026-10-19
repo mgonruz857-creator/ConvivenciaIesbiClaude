@@ -16,7 +16,7 @@
  * vivir dentro de esta plantilla.
  */
 
-import { CARPETA_DRIVE_ID, ARCHIVO_DB_DRIVE, ES_ENTORNO_PRUEBAS } from '../config/entorno';
+import { CARPETA_DRIVE_ID, ARCHIVO_DB_DRIVE, ES_ENTORNO_PRUEBAS, URL_APP } from '../config/entorno';
 
 export const ADMIN_INICIAL = 'mgonruz857@g.educaand.es';
 
@@ -292,6 +292,162 @@ function aplicarTextosRecuperados() {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ------------------------------------------------------------------ Resumen diario para tutores
+
+/**
+ * A las 14:55, cada tutor/a con partes NUEVOS de su grupo recibe un correo con el número de partes
+ * y el grupo (sin ningún dato del alumnado) y un enlace a la app. Quien no tenga partes nuevos no
+ * recibe nada. "Nuevo" = no incluido en ningún resumen anterior (los puestos después de las 14:55,
+ * o que lleguen tarde desde un dispositivo sin conexión, van en el resumen siguiente).
+ *
+ * Activación (una sola vez, desde el editor): elegir activarResumenDiario y pulsar "Ejecutar";
+ * Google pedirá permiso para enviar correos y programar tareas. Para pararlo: desactivarResumenDiario.
+ * Para ver qué se enviaría hoy SIN enviar nada: probarResumenTutores.
+ */
+var URL_APP = '__URL_APP__';
+var ES_PRUEBAS = __ES_PRUEBAS__;          // en PRUEBAS todos los correos van solo al administrador
+var HORA_RESUMEN = 14, MINUTO_RESUMEN = 55;
+var ARCHIVO_CONTROL_RESUMEN = 'CONTROL_RESUMEN_TUTORES.json';
+
+function hoyMadrid() { return Utilities.formatDate(new Date(), 'Europe/Madrid', 'yyyy-MM-dd'); }
+
+function leerControlResumen() {
+  var f = archivoEnCarpeta(ARCHIVO_CONTROL_RESUMEN);
+  if (!f) return null;
+  try { return { f: f, d: JSON.parse(f.getBlob().getDataAsString()) }; } catch (e) { return { f: f, d: { avisados: [] } }; }
+}
+
+function guardarControlResumen(control, datos) {
+  var texto = JSON.stringify(datos);
+  if (control && control.f) control.f.setContent(texto);
+  else DriveApp.getFolderById(CARPETA_ID).createFile(ARCHIVO_CONTROL_RESUMEN, texto, MimeType.PLAIN_TEXT);
+}
+
+/** Partes nuevos agrupados por tutor/a: [{ email, nombre, grupo, n }] */
+function calcularResumenTutores(db, avisados) {
+  var ya = {};
+  (avisados || []).forEach(function (id) { ya[id] = true; });
+  var grupoDe = {};
+  db.alumnos.forEach(function (a) { if (a && a.id_alumno) grupoDe[a.id_alumno] = a.grupo || ''; });
+  var porGrupo = {};
+  db.sanciones.forEach(function (x) {
+    if (!x || !x.id_sancion || ya[x.id_sancion]) return;
+    var g = grupoDe[x.id_alumno];
+    if (g) porGrupo[g] = (porGrupo[g] || 0) + 1;
+  });
+  var lista = [];
+  db.profesores.forEach(function (p) {
+    if (!p || !p.email || p.estado === 'INACTIVO' || !p.tutor_de_grupo) return;
+    var n = porGrupo[p.tutor_de_grupo];
+    if (n) lista.push({ email: norm(p.email), nombre: String(p.nombre || '').trim(), grupo: p.tutor_de_grupo, n: n });
+  });
+  return lista;
+}
+
+function escaparHtml(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function textoResumen(t) {
+  var partes = t.n === 1 ? '1 parte nuevo' : t.n + ' partes nuevos';
+  var saludo = t.nombre ? 'Hola, ' + t.nombre + ':' : 'Hola:';
+  var frase = 'Se ha' + (t.n === 1 ? '' : 'n') + ' registrado ' + partes + ' en su tutoría (' + t.grupo + ') desde el último aviso.';
+  var cierre = 'Puede consultarlos en la app, en la sección «Mi Tutoría»:';
+  return {
+    asunto: 'SIGC-BI · ' + partes + ' en su tutoría (' + t.grupo + ')',
+    texto: saludo + '\n\n' + frase + '\n' + cierre + '\n' + URL_APP +
+      '\n\nEste correo no contiene datos del alumnado. Se envía de forma automática solo cuando hay partes nuevos.\nIES Blas Infante · Convivencia',
+    html: '<p>' + escaparHtml(saludo) + '</p><p>' + escaparHtml(frase) + '<br>' + escaparHtml(cierre) + '</p>' +
+      '<p><a href="' + URL_APP + '" style="display:inline-block;padding:10px 18px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px">Abrir la app de Convivencia</a></p>' +
+      '<p style="color:#666;font-size:12px">Este correo no contiene datos del alumnado. Se envía de forma automática solo cuando hay partes nuevos.<br>IES Blas Infante · Convivencia</p>'
+  };
+}
+
+/** Lo ejecuta Google a las 14:55 (tarea programada). También se puede ejecutar a mano. */
+function enviarResumenTutores() {
+  borrarTareas('enviarResumenTutores');           // la tarea de hoy era de un solo uso
+  var props = propiedades();
+  var hoy = hoyMadrid();
+  if (props.getProperty('RESUMEN_ULTIMO_DIA') === hoy) return;
+  var db = leerDbDeDrive();
+  var control = leerControlResumen();
+  if (!control) {                                 // sin control: no se avisa del histórico
+    guardarControlResumen(null, { avisados: db.sanciones.map(function (x) { return x.id_sancion; }), creado: new Date().toISOString() });
+    props.setProperty('RESUMEN_ULTIMO_DIA', hoy);
+    return;
+  }
+  var lista = calcularResumenTutores(db, control.d.avisados);
+  var enviados = 0;
+  lista.forEach(function (t) {
+    var m = textoResumen(t);
+    try {
+      MailApp.sendEmail({
+        to: ES_PRUEBAS ? ADMIN_INICIAL : t.email,
+        subject: (ES_PRUEBAS ? '[PRUEBAS · para ' + t.email + '] ' : '') + m.asunto,
+        body: m.texto, htmlBody: m.html, name: 'SIGC-BI · IES Blas Infante'
+      });
+      enviados++;
+    } catch (e) { Logger.log('No se ha podido enviar el resumen a ' + t.email + ': ' + e); }
+  });
+  // Quedan como avisados los partes activos ahora (los borrados salen solos de la lista)
+  guardarControlResumen(control, { avisados: db.sanciones.map(function (x) { return x.id_sancion; }),
+    ultimo_envio: new Date().toISOString(), correos: enviados });
+  props.setProperty('RESUMEN_ULTIMO_DIA', hoy);
+  Logger.log('Resumen enviado a ' + enviados + ' tutor/a(s).');
+}
+
+/** Cada día (hacia las 12-13 h) deja programado el envío de las 14:55. */
+function programarResumenDiario() {
+  borrarTareas('enviarResumenTutores');
+  var ahora = new Date();
+  var hoy = hoyMadrid().split('-');
+  // 14:55 en hora de Madrid (la del proyecto puede ser otra): se calcula con el desfase actual
+  var desfase = parseInt(Utilities.formatDate(ahora, 'Europe/Madrid', 'Z'), 10);   // p. ej. 200 = +02:00
+  var minutosUtc = HORA_RESUMEN * 60 + MINUTO_RESUMEN - (Math.floor(desfase / 100) * 60 + desfase % 100);
+  var cuando = new Date(Date.UTC(parseInt(hoy[0], 10), parseInt(hoy[1], 10) - 1, parseInt(hoy[2], 10), 0, minutosUtc));
+  if (cuando.getTime() > ahora.getTime() + 60000) {
+    ScriptApp.newTrigger('enviarResumenTutores').timeBased().at(cuando).create();
+  }
+}
+
+function borrarTareas(funcion) {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === funcion) ScriptApp.deleteTrigger(t);
+  });
+}
+
+/** EDITOR: activa el resumen diario. Los partes que ya existen hoy no se avisan. */
+function activarResumenDiario() {
+  borrarTareas('programarResumenDiario');
+  ScriptApp.newTrigger('programarResumenDiario').timeBased().everyDays(1).atHour(12).inTimezone('Europe/Madrid').create();
+  if (!leerControlResumen()) {
+    var db = leerDbDeDrive();
+    guardarControlResumen(null, { avisados: db.sanciones.map(function (x) { return x.id_sancion; }), creado: new Date().toISOString() });
+  }
+  propiedades().deleteProperty('RESUMEN_ULTIMO_DIA');
+  programarResumenDiario();
+  Logger.log('Resumen diario activado: cada día a las ' + HORA_RESUMEN + ':' + MINUTO_RESUMEN + ' (hora de Madrid).' +
+    (ES_PRUEBAS ? ' Entorno de PRUEBAS: los correos llegan solo a ' + ADMIN_INICIAL + '.' : ''));
+}
+
+/** EDITOR: desactiva el resumen diario. */
+function desactivarResumenDiario() {
+  borrarTareas('programarResumenDiario');
+  borrarTareas('enviarResumenTutores');
+  Logger.log('Resumen diario desactivado.');
+}
+
+/** EDITOR: muestra a quién se enviaría ahora el resumen, SIN enviar nada. */
+function probarResumenTutores() {
+  var control = leerControlResumen();
+  if (!control) { Logger.log('El resumen no está activado (ejecute activarResumenDiario).'); return; }
+  var lista = calcularResumenTutores(leerDbDeDrive(), control.d.avisados);
+  if (!lista.length) { Logger.log('Ahora mismo no hay partes nuevos para ninguna tutoría: no se enviaría ningún correo.'); return; }
+  lista.forEach(function (t) { Logger.log(t.grupo + ': ' + t.n + ' parte(s) → ' + t.email); });
+  var tareas = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+  Logger.log('Tareas programadas: ' + (tareas.join(', ') || 'ninguna'));
 }
 
 // ------------------------------------------------------------------ Entrada
@@ -1219,5 +1375,7 @@ export function generarServidorAppsScript(): string {
     .split('__ARCHIVO_DB__').join(ARCHIVO_DB_DRIVE)
     .split('__ADMIN_INICIAL__').join(ADMIN_INICIAL)
     .split('__ENTORNO__').join(ES_ENTORNO_PRUEBAS ? 'PRUEBAS (datos ficticios)' : 'PRODUCCIÓN')
-    .split('__PERMITIR_BD_NUEVA__').join(ES_ENTORNO_PRUEBAS ? 'true' : 'false');
+    .split('__PERMITIR_BD_NUEVA__').join(ES_ENTORNO_PRUEBAS ? 'true' : 'false')
+    .split('__ES_PRUEBAS__').join(ES_ENTORNO_PRUEBAS ? 'true' : 'false')
+    .split('__URL_APP__').join(URL_APP);
 }
