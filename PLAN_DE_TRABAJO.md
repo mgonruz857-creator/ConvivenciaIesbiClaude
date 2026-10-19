@@ -130,4 +130,11 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       El tutor/a ve en Mi Tutoría las sanciones de su grupo y el estado de los trámites (solo lectura).
       El PDF solo se puede generar con los 4 trámites marcados (decisión de Miguel Ángel). Acceso directo
       desde el aviso rojo de 0 puntos ("Abrir expediente de sanción").
+- [~] **Resumen diario por correo a tutores (14:55)**: solo a tutores activos con partes NUEVOS en su grupo
+      (número + grupo + enlace a la app, sin datos del alumnado); los posteriores a las 14:55 van al día siguiente;
+      Jefatura no recibe resumen. Funciones de editor: `activarResumenDiario`, `probarResumenTutores`,
+      `enviarResumenTutores`, `desactivarResumenDiario`; control en `CONTROL_RESUMEN_TUTORES.json`.
+      ✅ Probado y activado en PRUEBAS (19/10/2026). ⏳ Pendiente pasarlo a producción cuando lo diga Miguel Ángel:
+      pegar el servidor de producción en la cuenta 14007180, nueva versión de la implementación, ejecutar
+      `activarResumenDiario` marcando TODAS las casillas de permisos; avisar antes al profesorado (perfil con su grupo).
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
