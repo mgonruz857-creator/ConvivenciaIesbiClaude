@@ -141,7 +141,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       servidor (propiedad TUT_VISTOS_<correo>) y vale para todos los dispositivos; el correo no cuenta como visto; al
       estrenarlo (o al cambiar de grupo) lo existente cuenta como visto. Necesita nueva versión de la implementación.
       ✅ Probado en PRUEBAS y EN PRODUCCIÓN desde el 19/10/2026.
-- [~] **Expedientes de sanción en el historial del alumno** (Carnet → «Ver Historial»): fechas, modalidad, días que
+- [x] **Expedientes de sanción en el historial del alumno** (Carnet → «Ver Historial»): fechas, modalidad, días que
       acude, conducta art. 37, trámites; botones «Abrir en Sanciones» (lo resalta) y PDF si está completado. Solo consulta.
-      ⏳ Pendiente de probar en PRUEBAS.
+      ✅ Probado en PRUEBAS y en producción desde el 19/10/2026.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
