@@ -141,5 +141,5 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       «Ver en Mi Tutoría»; allí se marcan como «Nuevo». Desaparece al entrar en Mi Tutoría; lo visto se guarda en el
       servidor (propiedad TUT_VISTOS_<correo>) y vale para todos los dispositivos; el correo no cuenta como visto; al
       estrenarlo (o al cambiar de grupo) lo existente cuenta como visto. Necesita nueva versión de la implementación.
-      ⏳ Pendiente de probar en PRUEBAS.
+      ✅ Probado en PRUEBAS (19/10/2026). ⏳ Pendiente pasar a producción junto con el resumen de las 8:30.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
