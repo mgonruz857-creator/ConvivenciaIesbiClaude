@@ -137,4 +137,9 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       ✅ Probado en PRUEBAS a las 14:55 (19/10/2026); cambiado a las 8:30 el mismo día (falta pegarlo en pruebas y volver a ejecutar activarResumenDiario). ⏳ Pendiente pasarlo a producción cuando lo diga Miguel Ángel:
       pegar el servidor de producción en la cuenta 14007180, nueva versión de la implementación, ejecutar
       `activarResumenDiario` marcando TODAS las casillas de permisos; avisar antes al profesorado (perfil con su grupo).
+- [~] **Aviso en la app de partes nuevos en la tutoría**: franja «Hay N partes nuevos en tu tutoría…» con botón
+      «Ver en Mi Tutoría»; allí se marcan como «Nuevo». Desaparece al entrar en Mi Tutoría; lo visto se guarda en el
+      servidor (propiedad TUT_VISTOS_<correo>) y vale para todos los dispositivos; el correo no cuenta como visto; al
+      estrenarlo (o al cambiar de grupo) lo existente cuenta como visto. Necesita nueva versión de la implementación.
+      ⏳ Pendiente de probar en PRUEBAS.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.

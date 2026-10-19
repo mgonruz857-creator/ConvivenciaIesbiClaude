@@ -294,6 +294,68 @@ function aplicarTextosRecuperados() {
   }
 }
 
+// ------------------------------------------------------------------ Aviso de partes nuevos en la tutoría
+
+/**
+ * Para cada tutor/a se guarda qué partes de su grupo ha visto ya en «Mi Tutoría» (propiedad
+ * TUT_VISTOS_<correo>: grupo y el final de cada identificador, para que quepa). La app muestra un
+ * aviso con los partes de su grupo que aún no ha visto. La primera vez (o si cambia de grupo) todos
+ * los partes que ya existen se dan por vistos.
+ */
+function claveVisto(id) { return String(id || '').slice(-10); }
+
+function partesDeGrupo(db, grupo) {
+  var delGrupo = {};
+  db.alumnos.forEach(function (a) { if (a && a.grupo === grupo && a.estado !== 'BAJA') delGrupo[a.id_alumno] = true; });
+  return db.sanciones.filter(function (x) { return x && x.id_sancion && delGrupo[x.id_alumno]; });
+}
+
+function leerVistos(email) {
+  try { return JSON.parse(propiedades().getProperty('TUT_VISTOS_' + email) || 'null'); } catch (e) { return null; }
+}
+
+function guardarVistos(email, grupo, claves) {
+  propiedades().setProperty('TUT_VISTOS_' + email, JSON.stringify({ grupo: grupo, v: claves }));
+}
+
+function tutoriaVistos(req) {
+  var db = leerDb();
+  var s = sesion(req.token, db);
+  var grupo = s.prof.tutor_de_grupo || '';
+  if (!grupo) return { ok: true, grupo: '', vistos: [] };
+  var guardado = leerVistos(s.email);
+  if (!guardado || guardado.grupo !== grupo) {
+    var todos = partesDeGrupo(db, grupo).map(function (x) { return claveVisto(x.id_sancion); });
+    guardarVistos(s.email, grupo, todos);
+    return { ok: true, grupo: grupo, vistos: todos };
+  }
+  return { ok: true, grupo: grupo, vistos: guardado.v || [] };
+}
+
+function marcarTutoriaVista(req) {
+  var db = leerDb();
+  var s = sesion(req.token, db);
+  var grupo = s.prof.tutor_de_grupo || '';
+  if (!grupo) return { ok: true, grupo: '', vistos: [] };
+  var guardado = leerVistos(s.email);
+  var antes = {};
+  if (guardado && guardado.grupo === grupo) (guardado.v || []).forEach(function (k) { antes[k] = true; });
+  var nuevos = {};
+  (Array.isArray(req.ids) ? req.ids.slice(0, 3000) : []).forEach(function (id) { nuevos[claveVisto(id)] = true; });
+  // Solo partes que existen y son de su grupo (así la lista no crece con borrados ni ajenos)
+  var claves = [];
+  partesDeGrupo(db, grupo).forEach(function (x) {
+    var k = claveVisto(x.id_sancion);
+    if (antes[k] || nuevos[k]) claves.push(k);
+  });
+  // Partes vistos en el dispositivo que aún no están en el servidor (recién puestos); los de otros grupos no
+  var existentes = {};
+  db.sanciones.forEach(function (x) { if (x && x.id_sancion) existentes[claveVisto(x.id_sancion)] = true; });
+  Object.keys(nuevos).forEach(function (k) { if (!existentes[k] && claves.indexOf(k) < 0) claves.push(k); });
+  guardarVistos(s.email, grupo, claves);
+  return { ok: true, grupo: grupo, vistos: claves };
+}
+
 // ------------------------------------------------------------------ Resumen diario para tutores
 
 /**
@@ -346,7 +408,7 @@ function calcularResumenTutores(db, avisados) {
   var ya = {};
   (avisados || []).forEach(function (id) { ya[id] = true; });
   var grupoDe = {};
-  db.alumnos.forEach(function (a) { if (a && a.id_alumno) grupoDe[a.id_alumno] = a.grupo || ''; });
+  db.alumnos.forEach(function (a) { if (a && a.id_alumno && a.estado !== 'BAJA') grupoDe[a.id_alumno] = a.grupo || ''; });
   var porGrupo = {}, fechasGrupo = {};
   db.sanciones.forEach(function (x) {
     if (!x || !x.id_sancion || ya[x.id_sancion]) return;
@@ -529,6 +591,8 @@ function doPost(e) {
       case 'cambiarClave': return salida(cambiarClave(req));
       case 'restablecerClave': return salida(restablecerClave(req));
       case 'estadoClaves': return salida(estadoClaves(req));
+      case 'tutoriaVistos': return salida(tutoriaVistos(req));
+      case 'marcarTutoriaVista': return salida(marcarTutoriaVista(req));
       default: return salida({ ok: false, error: 'Acción desconocida.' });
     }
   } catch (err) {

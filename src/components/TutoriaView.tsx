@@ -15,6 +15,8 @@ interface TutoriaViewProps {
   alumnos: Alumno[];
   sanciones: Sancion[];
   expedientes?: ExpedienteSancion[];
+  /** Partes que eran nuevos al entrar (se marcan con «Nuevo») */
+  nuevosIds?: Set<string>;
   onPrintParte: (sancion: Sancion) => void;
 }
 
@@ -49,7 +51,7 @@ function fechaLegible(f: string): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : f;
 }
 
-export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, sanciones, expedientes = [], onPrintParte }) => {
+export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, sanciones, expedientes = [], nuevosIds, onPrintParte }) => {
   const grupo = currentUser.tutor_de_grupo || '';
   const etiquetaGrupo = LISTA_GRUPOS_OFICIALES.find((g) => g.codigo === grupo)?.etiqueta || grupo;
   const [alumnoFiltro, setAlumnoFiltro] = useState<string>('');
@@ -86,6 +88,7 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
   const partesVisibles = alumnoFiltro ? partesGrupo.filter((s) => s.id_alumno === alumnoFiltro) : partesGrupo;
   const enAlerta = alumnosGrupo.filter((a) => a.puntos_actuales <= 3).length;
   const pendientesNotificar = partesGrupo.filter((s) => s.estado_tramitacion === 'PENDIENTE_NOTIFICACION').length;
+  const nuevos = partesGrupo.filter((s) => nuevosIds?.has(s.id_sancion)).length;
 
   if (!grupo) {
     return (
@@ -125,6 +128,12 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
             </div>
           </div>
         </div>
+        {nuevos > 0 && (
+          <div className="mt-4 p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 flex items-center gap-2">
+            <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold uppercase shrink-0">Nuevo</span>
+            {nuevos === 1 ? 'Hay 1 parte nuevo desde tu última visita (marcado abajo).' : `Hay ${nuevos} partes nuevos desde tu última visita (marcados abajo).`}
+          </div>
+        )}
         {pendientesNotificar > 0 && (
           <div className="mt-4 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -255,6 +264,9 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
                   >
                     <div className="space-y-0.5">
                       <div className="text-sm font-semibold text-slate-900">
+                        {nuevosIds?.has(s.id_sancion) && (
+                          <span className="mr-1.5 px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold uppercase align-middle">Nuevo</span>
+                        )}
                         {al ? `${al.apellidos}, ${al.nombre}` : 'Alumno/a'} · <span className="text-slate-700 font-medium">{tituloConducta(s.codigo_infraccion)}</span>
                       </div>
                       <div className="text-[11px] text-slate-500">

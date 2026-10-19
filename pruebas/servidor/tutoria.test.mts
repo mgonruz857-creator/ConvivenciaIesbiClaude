@@ -33,7 +33,9 @@ ok('NO ve los hechos del parte de otro grupo', sHugo.descripcion_hechos==='');
 ok('ve el teléfono de la familia de su grupo', S.getAlumnos().find((a:any)=>a.id_alumno==='a1').telefono_tutor==='611111111');
 ok('NO ve el teléfono de otro grupo', S.getAlumnos().find((a:any)=>a.id_alumno==='b1').telefono_tutor==='');
 ok('ve las medidas restaurativas de su grupo', S.getCompensaciones().find((c:any)=>c.id_compensacion==='c1')?.descripcion_tarea==='Ayuda en biblioteca');
-ok('el saldo de su alumna es correcto (medida del día 7 con carnet lleno, luego −2)', S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales===8, String(S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales));
+// −2 el día 8 y +1 por cada 7 días sin partes desde entonces (la prueba depende de la fecha de hoy)
+const semanas=Math.floor((Date.now()-new Date('2026-10-08T12:00:00').getTime())/(7*864e5)), esperado=Math.min(10,8+Math.max(0,semanas));
+ok('el saldo de su alumna es correcto (medida del día 7 con carnet lleno, luego −2, y recuperación semanal)', S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales===esperado, String(S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales)+' / '+esperado);
 S.modificarSancion(sLucia.id_sancion,{puntos_restados:0,descripcion_hechos:'cambiado por la tutora'},TUT,'intento');
 await G.pushToGoogleDrive();
 const tras=JSON.parse(srv.archivos['DB']).sanciones.find((s:any)=>s.id_sancion===sLucia.id_sancion);

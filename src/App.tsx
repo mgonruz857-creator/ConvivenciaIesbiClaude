@@ -73,8 +73,11 @@ import {
   X, 
   ShieldCheck,
   Info,
-  Clock
+  Clock,
+  Bell
 } from 'lucide-react';
+import { LISTA_GRUPOS_OFICIALES } from './types/convivencia';
+import { VistosTutoria, obtenerVistosTutoria, marcarTutoriaVista, partesDelGrupo, claveVisto } from './services/tutoriaAvisos';
 import { EntornoBanner } from './components/EntornoBanner';
 import { AvisoGuardado } from './components/AvisoGuardado';
 import { InformeCambioVersion } from './components/InformeCambioVersion';
@@ -311,6 +314,41 @@ export default function App() {
     return StorageService.getAlumnosPendientesDeExpediente();
   }, [alumnos, sanciones, expedientes]);
 
+  // Aviso de partes nuevos en la tutoría (lo visto se guarda en el servidor, por tutor/a)
+  const grupoTutoria = currentUser?.tutor_de_grupo || '';
+  const [vistosTutoria, setVistosTutoria] = useState<VistosTutoria | null>(null);
+  const [nuevosAlAbrirTutoria, setNuevosAlAbrirTutoria] = useState<Set<string>>(new Set());
+  const cargarVistosTutoria = () => {
+    obtenerVistosTutoria().then((v) => { if (v) setVistosTutoria(v); }).catch(() => {});
+  };
+  useEffect(() => {
+    setVistosTutoria(null);
+    setNuevosAlAbrirTutoria(new Set());
+    if (!currentUser || !grupoTutoria) return;
+    let cancelado = false;
+    obtenerVistosTutoria().then((v) => { if (!cancelado && v) setVistosTutoria(v); }).catch(() => {});
+    return () => { cancelado = true; };
+  }, [currentUser?.email, grupoTutoria]);
+
+  const partesNuevosTutoria = useMemo(() => {
+    if (!vistosTutoria || !grupoTutoria || vistosTutoria.grupo !== grupoTutoria) return [];
+    return partesDelGrupo(grupoTutoria, alumnos, sanciones).filter((s) => !vistosTutoria.vistos.has(claveVisto(s.id_sancion)));
+  }, [vistosTutoria, grupoTutoria, alumnos, sanciones]);
+
+  // En «Mi Tutoría» lo nuevo queda marcado como visto (y se señala con «Nuevo» mientras se está ahí)
+  useEffect(() => {
+    if (currentView !== 'tutoria' || !vistosTutoria || partesNuevosTutoria.length === 0) return;
+    const ids = partesNuevosTutoria.map((s) => s.id_sancion);
+    setNuevosAlAbrirTutoria((prev) => new Set([...prev, ...ids]));
+    const vistos = new Set(vistosTutoria.vistos);
+    ids.forEach((id) => vistos.add(claveVisto(id)));
+    setVistosTutoria({ grupo: vistosTutoria.grupo, vistos });
+    marcarTutoriaVista(ids).catch(() => {});
+  }, [currentView, partesNuevosTutoria]);
+  useEffect(() => {
+    if (currentView !== 'tutoria') setNuevosAlAbrirTutoria(new Set());
+  }, [currentView]);
+
   const handleLoginSuccess = (user: Profesor) => {
     refreshAllData();
     setCurrentUser(user);
@@ -344,6 +382,8 @@ export default function App() {
     }
     setAlumnoParaParte(null);
     setCurrentView(view);
+    // Si hay aviso de tutoría, comprobar si ya se vio en otro dispositivo
+    if (view !== 'tutoria' && partesNuevosTutoria.length > 0) cargarVistosTutoria();
     GoogleDriveSyncService.pullFromGoogleDrive({ forceRefresh: true })
       .then((res) => {
         if (res.success) {
@@ -492,6 +532,29 @@ export default function App() {
             <span>
               <strong>Sesión Docente ({currentUser.nombre}):</strong> Puedes registrar partes rápidos (<strong>+ Nuevo Parte</strong>), consultar tu historial (<strong>Mis Partes Puestos</strong>), atender guardias (<strong>Aula PAC</strong>) y actualizar tus datos personales (<strong>Mi Perfil</strong>).
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Aviso al tutor/a: partes nuevos en su grupo desde la última vez que entró en «Mi Tutoría» */}
+      {grupoTutoria && partesNuevosTutoria.length > 0 && currentView !== 'tutoria' && (
+        <div className="bg-indigo-700 text-white px-4 py-2.5 text-xs border-b border-indigo-900 shadow-xs">
+          <div className="flex items-center gap-2 max-w-7xl mx-auto flex-wrap">
+            <Bell className="w-4 h-4 text-indigo-200 shrink-0" />
+            <span className="flex-1">
+              <strong>
+                {partesNuevosTutoria.length === 1 ? 'Hay 1 parte nuevo' : `Hay ${partesNuevosTutoria.length} partes nuevos`}
+              </strong>{' '}
+              en tu tutoría ({LISTA_GRUPOS_OFICIALES.find((g) => g.codigo === grupoTutoria)?.etiqueta || grupoTutoria}) desde tu última visita.
+            </span>
+            <button
+              type="button"
+              onClick={() => handleNavigate('tutoria')}
+              className="bg-white text-indigo-900 font-bold px-2.5 py-1 rounded-lg text-xs hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer shrink-0 inline-flex items-center gap-1"
+            >
+              <span>Ver en Mi Tutoría</span>
+              <span>&rarr;</span>
+            </button>
           </div>
         </div>
       )}
@@ -649,6 +712,7 @@ export default function App() {
             alumnos={alumnos}
             sanciones={sanciones}
             expedientes={expedientes}
+            nuevosIds={nuevosAlAbrirTutoria}
             onPrintParte={(sancion) => setPrintableParte(sancion)}
           />
         )}
