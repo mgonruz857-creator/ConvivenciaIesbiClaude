@@ -19,6 +19,9 @@ interface SancionesViewProps {
   /** Si se llega desde un aviso de 0 puntos: abrir el formulario de ese alumno (o resaltar su expediente). */
   abrirParaAlumno?: string | null;
   onAbrirParaAlumnoAtendido?: () => void;
+  /** Si se llega desde el historial del alumno: resaltar ese expediente */
+  resaltarExpediente?: string | null;
+  onResaltarExpedienteAtendido?: () => void;
 }
 
 type Formulario = {
@@ -53,6 +56,8 @@ export const SancionesView: React.FC<SancionesViewProps> = ({
   alumnos,
   expedientes,
   onDataChanged,
+  resaltarExpediente,
+  onResaltarExpedienteAtendido,
   abrirParaAlumno,
   onAbrirParaAlumnoAtendido,
 }) => {
@@ -78,6 +83,16 @@ export const SancionesView: React.FC<SancionesViewProps> = ({
     }
     onAbrirParaAlumnoAtendido?.();
   }, [abrirParaAlumno]);
+
+  // Llegada desde el historial del alumno (Carnet): mostrar y resaltar ese expediente
+  useEffect(() => {
+    if (!resaltarExpediente) return;
+    setMostrarCompletados(true);
+    setResaltado(resaltarExpediente);
+    setTimeout(() => document.getElementById(`exp-${resaltarExpediente}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+    setTimeout(() => setResaltado(null), 4000);
+    onResaltarExpedienteAtendido?.();
+  }, [resaltarExpediente]);
 
   const alumnoPorId = useMemo(() => new Map(alumnos.map((a) => [a.id_alumno, a])), [alumnos]);
   const pendientes = useMemo(() => StorageService.getAlumnosPendientesDeExpediente(), [alumnos, expedientes]);

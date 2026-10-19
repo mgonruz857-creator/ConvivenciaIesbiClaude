@@ -38,8 +38,11 @@ import {
   Profesor, 
   GrupoEducativo, 
   MovimientoPuntos,
-  LISTA_GRUPOS_OFICIALES
+  LISTA_GRUPOS_OFICIALES,
+  ExpedienteSancion
 } from '../types/convivencia';
+import { TRAMITES_SANCION, MODALIDADES_SANCION, textoConductaArt37 } from '../data/sancionesArt37';
+import { generarParteSancionPdf, fechaLarga } from '../utils/parteSancionPdf';
 import { StorageService } from '../services/storageService';
 import { AuthService } from '../services/authService';
 import { GoogleDriveSyncService } from '../services/googleDriveSyncService';
@@ -61,6 +64,10 @@ interface CarnetListViewProps {
   onDataChanged?: () => void;
   onDeleteParte?: (idSancion: string, motivo: string) => { success: boolean; alumnoActualizado?: Alumno; sancionEliminada?: Sancion; error?: string };
   onEditParte?: (idSancion: string, cambios: Partial<Sancion>, motivo: string) => { success: boolean; sancionModificada?: Sancion; alumnoActualizado?: Alumno; error?: string };
+  /** Expedientes de sanción (se muestran en el historial del alumno, solo consulta) */
+  expedientes?: ExpedienteSancion[];
+  /** Ir a Sanciones con ese expediente resaltado */
+  onAbrirExpediente?: (idExpediente: string) => void;
 }
 
 // Filtros rápidos oficiales V0 (Página 4)
@@ -70,6 +77,8 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   alumnos,
   sanciones,
   profesores = [],
+  expedientes = [],
+  onAbrirExpediente,
   currentUser,
   initialFilterEstado,
   initialFilterGrupo,
@@ -950,6 +959,70 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                       </div>
                     ))}
                   </div>
+                </div>
+              );
+            })()}
+
+            {/* Expedientes de sanción del alumno (solo consulta; se gestionan en «Sanciones») */}
+            {(() => {
+              const exps = expedientes
+                .filter((e) => e.id_alumno === historyModalAlumno.id_alumno)
+                .sort((a, b) => (b.fecha_desde || '').localeCompare(a.fecha_desde || '') || (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
+              return (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-sky-700" />
+                    <span>Expedientes de sanción ({exps.length})</span>
+                  </h3>
+                  {exps.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic py-1">Sin expedientes de sanción.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {exps.map((e) => {
+                        const hechos = TRAMITES_SANCION.filter((t) => e.tramites?.[t.clave]?.hecho).length;
+                        const modalidad = MODALIDADES_SANCION.find((m) => m.valor === e.modalidad)?.etiqueta || e.modalidad;
+                        return (
+                          <div key={e.id_expediente} className={`p-3 rounded-xl border text-xs space-y-1.5 ${e.completado ? 'bg-emerald-50/40 border-emerald-200' : 'bg-amber-50/40 border-amber-200'}`}>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-semibold text-slate-900">Del {fechaLarga(e.fecha_desde)} al {fechaLarga(e.fecha_hasta)}</span>
+                              <span className={`font-bold px-2 py-0.5 rounded-full ${e.completado ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
+                                {e.completado ? 'Trámites completados' : `Trámites: ${hechos}/${TRAMITES_SANCION.length}`}
+                              </span>
+                            </div>
+                            <div className="text-slate-600">
+                              {modalidad}{e.dias_acude ? ` · Acude: ${e.dias_acude}` : ''}
+                            </div>
+                            <div className="text-slate-500">Art. 37.{e.conducta_art37}: {textoConductaArt37(e.conducta_art37)}</div>
+                            <ul className="text-slate-600 grid sm:grid-cols-2 gap-x-4">
+                              {TRAMITES_SANCION.map((t) => (
+                                <li key={t.clave}>{e.tramites?.[t.clave]?.hecho ? '✅' : '⬜'} {t.etiqueta}</li>
+                              ))}
+                            </ul>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {onAbrirExpediente && (
+                                <button
+                                  type="button"
+                                  onClick={() => onAbrirExpediente(e.id_expediente)}
+                                  className="px-2.5 py-1 bg-white border border-sky-200 text-sky-800 hover:bg-sky-50 rounded-lg font-semibold cursor-pointer"
+                                >
+                                  Abrir en Sanciones →
+                                </button>
+                              )}
+                              {e.completado && (
+                                <button
+                                  type="button"
+                                  onClick={() => { generarParteSancionPdf(e, historyModalAlumno).catch(() => {}); }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg font-semibold cursor-pointer"
+                                >
+                                  <Printer className="w-3.5 h-3.5" /> Parte de sanción (PDF)
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })()}

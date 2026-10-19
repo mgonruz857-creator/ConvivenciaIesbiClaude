@@ -145,6 +145,8 @@ export default function App() {
   const [expedientes, setExpedientes] = useState<ExpedienteSancion[]>([]);
   // Alumno para el que abrir (o mostrar) el expediente al entrar en Sanciones desde un aviso
   const [sancionParaAlumno, setSancionParaAlumno] = useState<string | null>(null);
+  // Expediente a resaltar al entrar en Sanciones desde el historial del alumno
+  const [expedienteResaltado, setExpedienteResaltado] = useState<string | null>(null);
 
   // Modals state
   const [printableParte, setPrintableParte] = useState<Sancion | null>(null);
@@ -675,6 +677,11 @@ export default function App() {
             initialFilterEstado={carnetInitialFilterEstado}
             focusedAlumnoId={carnetFocusedAlumnoId}
             onClearFocusedAlumno={() => setCarnetFocusedAlumnoId(null)}
+            expedientes={expedientes}
+            onAbrirExpediente={(id) => {
+              setExpedienteResaltado(id);
+              setCurrentView('sanciones');
+            }}
             onSelectAlumnoForParte={(idAlumno) => {
               setAlumnoParaParte(idAlumno);
               setCurrentView('imponer');
@@ -698,6 +705,8 @@ export default function App() {
             expedientes={expedientes}
             abrirParaAlumno={sancionParaAlumno}
             onAbrirParaAlumnoAtendido={() => setSancionParaAlumno(null)}
+            resaltarExpediente={expedienteResaltado}
+            onResaltarExpedienteAtendido={() => setExpedienteResaltado(null)}
             onDataChanged={() => {
               refreshAllData();
               notifyLocalSync();
