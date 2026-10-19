@@ -365,12 +365,17 @@ function textoResumen(t) {
   };
 }
 
-/** Lo ejecuta Google a las 14:55 (tarea programada). También se puede ejecutar a mano. */
-function enviarResumenTutores() {
-  borrarTareas('enviarResumenTutores');           // la tarea de hoy era de un solo uso
+/**
+ * Lo ejecuta Google a las 14:55 (tarea programada). También se puede ejecutar a mano desde el editor:
+ * a mano se envía siempre (aunque ya se haya enviado hoy), pero solo de los partes aún no avisados.
+ * Si el correo de una tutoría no sale, sus partes siguen pendientes para el siguiente envío.
+ */
+function enviarResumenTutores(e) {
+  var automatico = !!(e && e.triggerUid);
+  if (automatico) borrarTareas('enviarResumenTutores');   // la tarea de hoy era de un solo uso
   var props = propiedades();
   var hoy = hoyMadrid();
-  if (props.getProperty('RESUMEN_ULTIMO_DIA') === hoy) return;
+  if (automatico && props.getProperty('RESUMEN_ULTIMO_DIA') === hoy) return;
   var db = leerDbDeDrive();
   var control = leerControlResumen();
   if (!control) {                                 // sin control: no se avisa del histórico
@@ -379,7 +384,7 @@ function enviarResumenTutores() {
     return;
   }
   var lista = calcularResumenTutores(db, control.d.avisados);
-  var enviados = 0;
+  var enviados = 0, gruposFallidos = {}, errores = [];
   lista.forEach(function (t) {
     var m = textoResumen(t);
     try {
@@ -389,13 +394,28 @@ function enviarResumenTutores() {
         body: m.texto, htmlBody: m.html, name: 'SIGC-BI · IES Blas Infante'
       });
       enviados++;
-    } catch (e) { Logger.log('No se ha podido enviar el resumen a ' + t.email + ': ' + e); }
+    } catch (err) {
+      gruposFallidos[t.grupo] = true;
+      errores.push(t.email + ': ' + err);
+    }
   });
-  // Quedan como avisados los partes activos ahora (los borrados salen solos de la lista)
-  guardarControlResumen(control, { avisados: db.sanciones.map(function (x) { return x.id_sancion; }),
-    ultimo_envio: new Date().toISOString(), correos: enviados });
+  // Quedan como avisados los partes activos ahora, salvo los de las tutorías cuyo correo no salió
+  var grupoDe = {};
+  db.alumnos.forEach(function (a) { if (a && a.id_alumno) grupoDe[a.id_alumno] = a.grupo || ''; });
+  var yaAvisados = {};
+  (control.d.avisados || []).forEach(function (id) { yaAvisados[id] = true; });
+  var avisados = db.sanciones.filter(function (x) { return yaAvisados[x.id_sancion] || !gruposFallidos[grupoDe[x.id_alumno]]; })
+    .map(function (x) { return x.id_sancion; });
+  guardarControlResumen(control, { avisados: avisados, ultimo_envio: new Date().toISOString(), correos: enviados });
   props.setProperty('RESUMEN_ULTIMO_DIA', hoy);
   Logger.log('Resumen enviado a ' + enviados + ' tutor/a(s).');
+  if (errores.length) {
+    Logger.log('NO se han podido enviar ' + errores.length + ' correo(s); sus partes quedan pendientes para el próximo envío.');
+    errores.forEach(function (x) { Logger.log('  ' + x); });
+    if (String(errores[0]).indexOf('send_mail') >= 0) {
+      Logger.log('Falta el permiso para enviar correos: ejecute activarResumenDiario y, en la ventana de Google, marque TODAS las casillas.');
+    }
+  }
 }
 
 /** Cada día (hacia las 12-13 h) deja programado el envío de las 14:55. */
@@ -420,6 +440,10 @@ function borrarTareas(funcion) {
 
 /** EDITOR: activa el resumen diario. Los partes que ya existen hoy no se avisan. */
 function activarResumenDiario() {
+  if (ScriptApp.requireScopes) {   // vuelve a pedir los permisos que falten (casillas sin marcar)
+    ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/script.send_mail',
+      'https://www.googleapis.com/auth/script.scriptapp']);
+  }
   borrarTareas('programarResumenDiario');
   ScriptApp.newTrigger('programarResumenDiario').timeBased().everyDays(1).atHour(12).inTimezone('Europe/Madrid').create();
   if (!leerControlResumen()) {

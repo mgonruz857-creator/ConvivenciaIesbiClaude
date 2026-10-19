@@ -22,7 +22,8 @@ const ScriptApp = {
   newTrigger: (f: string) => { const t: any = { f }; const b: any = { timeBased: () => b, at: (d: Date) => (t.at = d, b), everyDays: (n: number) => (t.cada = n, b),
     atHour: (h: number) => (t.hora = h, b), inTimezone: (z: string) => (t.zona = z, b), create: () => { tareas.push(t); return t; } }; return b; },
 };
-const MailApp = { sendEmail: (m: any) => correos.push(m) };
+let sinPermiso = false;
+const MailApp = { sendEmail: (m: any) => { if (sinPermiso) throw new Error('No tienes permiso para llamar a MailApp.sendEmail. Permisos necesarios: https://www.googleapis.com/auth/script.send_mail'); correos.push(m); } };
 const srv = crearServidor(generarServidorAppsScript(), db, { extra: { ScriptApp, MailApp } });
 srv.post({ accion: 'estadoCuenta', email: ADMIN });
 const antes = srv.archivos['DB'];
@@ -40,7 +41,9 @@ ok('si ya pasaron las 14:55 no programa nada ese día', !tareas.some(t => t.f ==
 srv.ctx.Date = RealDate; (globalThis as any).Date = RealDate;
 // nuevos partes: 2 en 3º ESO B, 1 en 2º ESO C (tutor inactivo), ninguno en 1º ESO A
 const d = JSON.parse(srv.archivos['DB']); d.sanciones.push(parte('n1', 'a1'), parte('n2', 'a2'), parte('n3', 'a4')); srv.tocarExterno(d);
-srv.ctx.enviarResumenTutores();
+sinPermiso = true; srv.ctx.enviarResumenTutores({ triggerUid: 'x' });
+ok('sin permiso de correo no se envía nada', correos.length === 0);
+sinPermiso = false; srv.ctx.enviarResumenTutores();
 ok('un solo correo (solo la tutoría con partes nuevos y tutor activo)', correos.length === 1, String(correos.length));
 const c = correos[0] || {};
 ok('en PRUEBAS va al administrador, indicando el destinatario real', c.to === ADMIN && c.subject.includes('tutora1@g.educaand.es'), c.to + ' / ' + c.subject);
@@ -49,8 +52,10 @@ ok('incluye el enlace a la app', c.body.includes('https://mgonruz857-creator.git
 ok('ningún dato del alumnado (nombres, hechos, puntos)', !/Pepito|Juana|Pérez|Hechos|privados|puntos/i.test(c.body + c.htmlBody + c.subject));
 ok('no avisa del parte que ya existía al activar', !c.body.includes('3 partes'));
 ok('enviar no modifica el archivo de datos', JSON.parse(srv.archivos['DB']).sanciones.length === 4);
+srv.ctx.enviarResumenTutores({ triggerUid: 'x' });
+ok('la tarea automática no se repite el mismo día', correos.length === 1);
 srv.ctx.enviarResumenTutores();
-ok('no se repite el mismo día', correos.length === 1);
+ok('a mano no reenvía partes ya avisados', correos.length === 1);
 // día siguiente: un parte puesto después de las 14:55 del día anterior
 srv.props.set('RESUMEN_ULTIMO_DIA', '2026-01-01');
 const d2 = JSON.parse(srv.archivos['DB']); d2.sanciones.push(parte('n4', 'a3')); srv.tocarExterno(d2);
