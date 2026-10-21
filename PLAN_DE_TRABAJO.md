@@ -165,3 +165,8 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
+
+## 📄 Documentación técnica
+
+- Documento técnico actualizado (21/10/2026) como documento privado de Miguel Ángel; **no se sube al repositorio** (es público:
+  decisión de Miguel Ángel). Eliminado el antiguo `ARQUITECTURA_Y_TECNOLOGIAS.md` (desfasado: hablaba de Netlify y de la v1).
