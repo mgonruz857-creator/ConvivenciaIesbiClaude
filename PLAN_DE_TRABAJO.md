@@ -52,6 +52,9 @@ La app en uso (`convivenciaiesbi.github.io`) no se toca hasta el paso final.
   versiones de Drive (`buscarTextosEnVersiones` + `aplicarTextosRecuperados`); 15 sin texto original (Miguel Ángel
   decidió no intentar una búsqueda menos estricta).
 - Queda en el repositorio del centro una rama sin uso `prueba-permiso-claude` (se puede borrar en GitHub).
+- Repositorios públicos (decisión de Miguel Ángel): GitHub Pages con plan gratuito exige repositorio público; en
+  privado la web dejaría de funcionar salvo con plan Pro/Team (posible gratis con GitHub Education). Público no
+  expone datos (sin datos reales ni contraseñas en el código; el servidor exige sesión; Drive restringido).
 
 ## 🚀 Paso a producción (histórico del procedimiento)
 
