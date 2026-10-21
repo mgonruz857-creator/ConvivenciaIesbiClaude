@@ -20,8 +20,10 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
     getName: () => (k === 'DB' ? ARCHIVO_DB_DRIVE : k),
     setName: (n: string) => { archivos[n] = archivos[k]; drive.fechas[n] = drive.fechas[k]; delete archivos[k]; delete drive.fechas[k]; k = n; },
     getBlob: () => ({ getDataAsString: () => archivos[k] }),
-    setContent: (t: string) => { archivos[k] = t; drive.fechas[k] = drive.reloj++; },
+    setContent: (t: string) => { if (drive.fallosEscritura > 0) { drive.fallosEscritura--; t = ''; } archivos[k] = t; drive.fechas[k] = drive.reloj++; },
     getLastUpdated: () => new Date(drive.fechas[k] || 0),
+    getSize: () => Buffer.byteLength(archivos[k] || '', 'utf8'),
+    getMimeType: () => 'text/plain',
   });
   const cache = new Map<string, string>(); const props = new Map<string, string>();
   let llamadasCifrado = 0;

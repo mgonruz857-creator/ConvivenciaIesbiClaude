@@ -294,6 +294,102 @@ function aplicarTextosRecuperados() {
   }
 }
 
+// ------------------------------------------------------------------ Restaurar el archivo de datos (solo desde el editor)
+
+/** Versiones guardadas por Drive del archivo de datos, de la más reciente a la más antigua. */
+function listarVersionesDatos(f) {
+  var cab = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+  var base = 'https://www.googleapis.com/drive/v3/files/' + f.getId() + '/revisions';
+  var versiones = [], pagina = '';
+  do {
+    var r = UrlFetchApp.fetch(base + '?pageSize=200&fields=nextPageToken,revisions(id,modifiedTime,size)' +
+      (pagina ? '&pageToken=' + encodeURIComponent(pagina) : ''), { headers: cab, muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) {
+      Logger.log('No se pueden leer las versiones (' + r.getResponseCode() + '): ' + r.getContentText().substring(0, 300));
+      Logger.log('Si el mensaje habla de "Drive API" sin activar: en el editor, "Servicios" (+) > Drive API > Añadir, y volver a ejecutar.');
+      return null;
+    }
+    var j = JSON.parse(r.getContentText());
+    versiones = versiones.concat(j.revisions || []);
+    pagina = j.nextPageToken || '';
+  } while (pagina);
+  versiones.sort(function (a, b) { return String(b.modifiedTime).localeCompare(String(a.modifiedTime)); });
+  return { lista: versiones, base: base, cab: cab };
+}
+
+/** Lee una versión: { ok, texto, partes, alumnos, profesores, expedientes } */
+function leerVersionDatos(vs, v) {
+  try {
+    var rv = UrlFetchApp.fetch(vs.base + '/' + v.id + '?alt=media', { headers: vs.cab, muteHttpExceptions: true });
+    if (rv.getResponseCode() !== 200) return { ok: false };
+    var texto = rv.getContentText();
+    var d = decodificarDb(texto);
+    var borrados = {};
+    (d.deleted_sanciones || []).forEach(function (id) { borrados[id] = true; });
+    return { ok: true, texto: texto,
+      partes: d.sanciones.filter(function (x) { return x && x.id_sancion && !borrados[x.id_sancion]; }).length,
+      alumnos: d.alumnos.length, profesores: d.profesores.length, expedientes: (d.expedientes_sancion || []).length };
+  } catch (e) { return { ok: false }; }
+}
+
+function fechaVersion(v) { return Utilities.formatDate(new Date(v.modifiedTime), 'Europe/Madrid', 'dd/MM/yyyy HH:mm:ss'); }
+
+/** EDITOR (SOLO LEE): muestra las últimas versiones del archivo de datos y si se pueden leer. */
+function revisarVersionesDatos() {
+  var f = archivoDb();
+  if (!f) { Logger.log('No se encuentra el archivo de datos.'); return; }
+  Logger.log('Archivo de datos actual: ' + f.getSize() + ' bytes, modificado ' +
+    Utilities.formatDate(f.getLastUpdated(), 'Europe/Madrid', 'dd/MM/yyyy HH:mm:ss'));
+  var vs = listarVersionesDatos(f);
+  if (!vs) return;
+  Logger.log('Versiones guardadas por Drive: ' + vs.lista.length + '. Las 8 más recientes:');
+  vs.lista.slice(0, 8).forEach(function (v) {
+    var info = leerVersionDatos(vs, v);
+    Logger.log(fechaVersion(v) + ' · ' + (v.size || 0) + ' bytes · ' + (info.ok
+      ? 'BIEN: ' + info.partes + ' partes, ' + info.alumnos + ' alumnos, ' + info.profesores + ' profesores, ' + info.expedientes + ' expedientes'
+      : 'NO SE PUEDE LEER'));
+  });
+}
+
+/**
+ * EDITOR: si el archivo de datos actual NO se puede leer (vacío o dañado), lo sustituye por la versión
+ * más reciente que sí se lee bien. Antes guarda en la carpeta una copia de esa versión.
+ * Si el archivo actual se lee bien, no hace nada.
+ */
+function restaurarUltimaVersionValida() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var f = archivoDb();
+    if (!f) { Logger.log('No se encuentra el archivo de datos.'); return; }
+    try {
+      decodificarDb(f.getBlob().getDataAsString());
+      Logger.log('El archivo de datos actual se lee bien: NO se restaura nada.');
+      return;
+    } catch (e) { /* ilegible: seguir */ }
+    var vs = listarVersionesDatos(f);
+    if (!vs) return;
+    for (var i = 0; i < vs.lista.length && i < 30; i++) {
+      var v = vs.lista[i];
+      var info = leerVersionDatos(vs, v);
+      if (!info.ok) { Logger.log('Versión de ' + fechaVersion(v) + ': no se puede leer, se descarta.'); continue; }
+      var sello = Utilities.formatDate(new Date(), 'Europe/Madrid', 'yyyy-MM-dd_HH-mm');
+      DriveApp.getFolderById(CARPETA_ID).createFile('COPIA_RESTAURACION_' + sello + '.json', info.texto, MimeType.PLAIN_TEXT);
+      f.setContent(info.texto);
+      comprobarEscritura(f, info.texto);
+      var cache = CacheService.getScriptCache();
+      ['DB2_N', 'DB2_FECHA', 'DB2_VERIF'].forEach(function (k) { cache.remove(k); });
+      Logger.log('RESTAURADO el archivo de datos con la versión de ' + fechaVersion(v) + ': ' + info.partes + ' partes, ' +
+        info.alumnos + ' alumnos, ' + info.profesores + ' profesores, ' + info.expedientes + ' expedientes.');
+      Logger.log('Copia de esa versión guardada como COPIA_RESTAURACION_' + sello + '.json. Ya se puede entrar en la app.');
+      return;
+    }
+    Logger.log('No se ha encontrado ninguna versión que se pueda leer. No se ha cambiado nada.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ------------------------------------------------------------------ Aviso de partes nuevos en la tutoría
 
 /**
@@ -788,10 +884,30 @@ function escribirDb(db) {
   delete db.reset_credenciales_emails;
   var texto = JSON.stringify(db);
   var f = archivoDb();
-  if (f) f.setContent(texto);
-  else f = DriveApp.getFolderById(CARPETA_ID).createFile(ARCHIVO_DB, texto, MimeType.PLAIN_TEXT);
+  if (f) {
+    f.setContent(texto);
+    comprobarEscritura(f, texto);
+  } else f = DriveApp.getFolderById(CARPETA_ID).createFile(ARCHIVO_DB, texto, MimeType.PLAIN_TEXT);
   cacheGuardar(texto);
   anotarFechaCache(f);
+}
+
+/**
+ * Comprueba que Drive ha guardado de verdad el contenido (el 21/10/2026 el archivo quedó con 0 bytes).
+ * Si ha quedado vacío, lo vuelve a escribir una vez; si sigue vacío, da error para que la app
+ * conserve los cambios y los reenvíe.
+ */
+function comprobarEscritura(f, texto) {
+  var vacio = function () {
+    try {
+      var g = DriveApp.getFileById(f.getId());
+      if (g.getSize() > 0) return false;
+      return String(g.getBlob().getDataAsString() || '').length === 0;   // confirmar antes de repetir
+    } catch (e) { return false; }
+  };
+  if (!vacio()) return;
+  f.setContent(texto);
+  if (vacio()) fallo('ESCRITURA_FALLIDA', 'Google Drive no ha guardado los datos. Sus cambios siguen en este dispositivo y se reenviarán.');
 }
 
 // ------------------------------------------------------------------ Paso de la versión 1 a la 2 (una sola vez)
