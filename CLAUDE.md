@@ -64,7 +64,8 @@ Nunca forzar (`--force`) contra el repositorio del centro.
   avisar de que **marque todas las casillas**.
 - Funciones de editor existentes: `restablecerClaveAdministrador`, `diagnosticoDatos`,
   `activarResumenDiario`, `probarResumenTutores`, `enviarResumenTutores`, `desactivarResumenDiario`,
-  `revisarVersionesDatos` (solo lee las versiones de Drive), `restaurarUltimaVersionValida` (si el archivo está vacío o dañado)
+  `revisarVersionesDatos` (solo lee las versiones de Drive), `restaurarUltimaVersionValida` (si el archivo está vacío o dañado),
+  `activarCopiasDiarias`, `copiaSeguridadDiaria`, `listarCopiasDiarias`, `restaurarCopiaDiaria` (con `FECHA_COPIA_A_RESTAURAR`), `desactivarCopiasDiarias`
   (y las de recuperación ya usadas: `prepararPartesParaRevisar`, `buscarTextosEnVersiones`, `aplicarTextosRecuperados`).
 
 ## Pruebas

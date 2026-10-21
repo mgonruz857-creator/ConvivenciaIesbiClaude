@@ -24,6 +24,15 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
     getLastUpdated: () => new Date(drive.fechas[k] || 0),
     getSize: () => Buffer.byteLength(archivos[k] || '', 'utf8'),
     getMimeType: () => 'text/plain',
+    setTrashed: (v: boolean) => { if (v) { (drive.papelera = drive.papelera || {})[k] = archivos[k]; delete archivos[k]; delete drive.fechas[k]; } },
+  });
+  // Carpetas: la principal ('') y subcarpetas, guardadas como prefijo 'NOMBRE/' en las claves
+  const carpeta = (pre: string): any => ({
+    getFiles: () => { const l = Object.keys(archivos).filter(k => pre ? k.startsWith(pre) : !k.includes('/')).map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
+    getFilesByName: (n: string) => { const k = pre ? pre + n : clave(n); const ks = k === 'DB' ? delPrincipal() : (archivos[k] !== undefined ? [k] : []); const l = ks.map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
+    createFile: (n: string, t: string) => { let k = pre ? pre + n : clave(n); if (k === 'DB' && archivos['DB'] !== undefined) k = 'DB#' + (delPrincipal().length + 1); archivos[k] = t; drive.fechas[k] = drive.reloj++; return archivo(k); },
+    getFoldersByName: (n: string) => { const existe = (drive.carpetas || []).includes(pre + n + '/'); let usado = false; return { hasNext: () => existe && !usado, next: () => { usado = true; return carpeta(pre + n + '/'); } }; },
+    createFolder: (n: string) => { (drive.carpetas = drive.carpetas || []).push(pre + n + '/'); return carpeta(pre + n + '/'); },
   });
   const cache = new Map<string, string>(); const props = new Map<string, string>();
   let llamadasCifrado = 0;
@@ -45,11 +54,8 @@ export function crearServidor(codigo: string, archivoInicial?: any, opciones?: {
     MimeType: { PLAIN_TEXT: 'text/plain' },
     DriveApp: {
       getFileById: (id: string) => { const k = id.replace(/^id-/, ''); if (archivos[k] === undefined) throw new Error('No existe'); return archivo(k); },
-      getFolderById: () => ({
-        getFiles: () => { const l = Object.keys(archivos).map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
-        getFilesByName: (n: string) => { const k = clave(n); const ks = k === 'DB' ? delPrincipal() : (archivos[k] !== undefined ? [k] : []); const l = ks.map(archivo); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; },
-        createFile: (n: string, t: string) => { let k = clave(n); if (k === 'DB' && archivos['DB'] !== undefined) k = 'DB#' + (delPrincipal().length + 1); archivos[k] = t; drive.fechas[k] = drive.reloj++; return archivo(k); } }) },
-    Logger: { log: () => {} },
+      getFolderById: () => carpeta('') },
+    Logger: { log: (m: any) => { (drive.logs = drive.logs || []).push(String(m)); } },
   };
   Object.assign(ctx, opciones?.extra || {});
   vm.createContext(ctx); vm.runInContext(codigo, ctx);

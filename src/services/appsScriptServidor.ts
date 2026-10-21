@@ -294,6 +294,151 @@ function aplicarTextosRecuperados() {
   }
 }
 
+// ------------------------------------------------------------------ Copias de seguridad diarias
+
+/**
+ * De lunes a viernes hacia las 22:00 se guarda una copia del archivo de datos en la subcarpeta
+ * COPIAS_SEGURIDAD (COPIA_DIARIA_aaaa-mm-dd.json). Se conservan las 14 más recientes; las anteriores
+ * van a la papelera de Drive. NO se copia si el archivo no se puede leer o tiene muchos menos partes
+ * que la última copia (así una copia mala nunca sustituye a las buenas); en ese caso la tarea termina con
+ * error y Google avisa por correo. Ejecutada a mano desde el editor, copia siempre (si el archivo se lee).
+ * Activación (una vez, desde el editor): activarCopiasDiarias. Para pararlo: desactivarCopiasDiarias.
+ * Ver las copias: listarCopiasDiarias. Restaurar una: escribir su fecha en FECHA_COPIA_A_RESTAURAR,
+ * guardar y ejecutar restaurarCopiaDiaria.
+ */
+var CARPETA_COPIAS = 'COPIAS_SEGURIDAD';
+var PREFIJO_COPIA = 'COPIA_DIARIA_';
+var COPIAS_A_CONSERVAR = 14;
+var HORA_COPIA = 22;
+var FECHA_COPIA_A_RESTAURAR = '';   // p. ej. '2026-10-21' (solo para restaurarCopiaDiaria)
+
+function carpetaCopias() {
+  var principal = DriveApp.getFolderById(CARPETA_ID);
+  var it = principal.getFoldersByName(CARPETA_COPIAS);
+  return it.hasNext() ? it.next() : principal.createFolder(CARPETA_COPIAS);
+}
+
+/** Copias diarias de la más reciente a la más antigua: [{ f, fecha }] */
+function copiasDiarias(carpeta) {
+  var lista = [], it = carpeta.getFiles();
+  while (it.hasNext()) {
+    var f = it.next();
+    var m = /^COPIA_DIARIA_(\d{4}-\d{2}-\d{2})\.json$/.exec(String(f.getName()).split('/').pop());
+    if (m) lista.push({ f: f, fecha: m[1] });
+  }
+  lista.sort(function (a, b) { return b.fecha.localeCompare(a.fecha); });
+  return lista;
+}
+
+function partesActivos(d) {
+  var borrados = {};
+  (d.deleted_sanciones || []).forEach(function (id) { borrados[id] = true; });
+  return d.sanciones.filter(function (x) { return x && x.id_sancion && !borrados[x.id_sancion]; }).length;
+}
+
+/** Lo ejecuta Google cada día hacia las 22:00 (y se puede ejecutar a mano). */
+function copiaSeguridadDiaria(e) {
+  var hoy = hoyMadrid();
+  var automatico = !!(e && e.triggerUid);
+  if (automatico && !esLaborable(hoy)) return;
+  // Si no se puede copiar, la tarea automática termina con error para que Google avise por correo
+  var noCopiar = function (motivo) {
+    Logger.log('NO se hace la copia: ' + motivo + ' Se conservan las copias anteriores.');
+    if (automatico) throw new Error('Copia de seguridad NO realizada: ' + motivo);
+  };
+  var f = archivoDb();
+  if (!f) return noCopiar('no se encuentra el archivo de datos.');
+  var texto = f.getBlob().getDataAsString();
+  var d;
+  try { d = decodificarDb(texto); } catch (err) {
+    return noCopiar('el archivo de datos no se puede leer (vacío o dañado).');
+  }
+  var partes = partesActivos(d);
+  var carpeta = carpetaCopias();
+  var copias = copiasDiarias(carpeta).filter(function (c) { return c.fecha !== hoy; });
+  // (a mano se copia siempre: quien la ejecuta ya ha revisado los datos)
+  if (automatico && copias.length) {
+    var anteriores = -1;
+    try { anteriores = partesActivos(decodificarDb(copias[0].f.getBlob().getDataAsString())); } catch (err2) { /* se copia igualmente */ }
+    if (anteriores >= 0 && anteriores - partes >= 10 && partes < anteriores * 0.8) {
+      return noCopiar('el archivo tiene ' + partes + ' partes y la copia del ' + copias[0].fecha + ' tenía ' + anteriores +
+        '. Revise si se han borrado partes por error; si es correcto, ejecute copiaSeguridadDiaria a mano.');
+    }
+  }
+  var nombre = PREFIJO_COPIA + hoy + '.json';
+  var existente = carpeta.getFilesByName(nombre);
+  if (existente.hasNext()) existente.next().setContent(texto);
+  else carpeta.createFile(nombre, texto, MimeType.PLAIN_TEXT);
+  var todas = copiasDiarias(carpeta);
+  todas.slice(COPIAS_A_CONSERVAR).forEach(function (c) { c.f.setTrashed(true); });
+  Logger.log('Copia de seguridad guardada: ' + nombre + ' (' + partes + ' partes, ' + d.alumnos.length + ' alumnos). Copias conservadas: ' +
+    Math.min(todas.length, COPIAS_A_CONSERVAR) + '.');
+}
+
+/** EDITOR: activa la copia diaria (lunes a viernes, 22:00) y hace la primera ahora. */
+function activarCopiasDiarias() {
+  borrarTareas('copiaSeguridadDiaria');
+  ScriptApp.newTrigger('copiaSeguridadDiaria').timeBased().everyDays(1).atHour(HORA_COPIA).inTimezone('Europe/Madrid').create();
+  copiaSeguridadDiaria();
+  Logger.log('Copias diarias activadas: de lunes a viernes entre las ' + HORA_COPIA + ':00 y las ' + (HORA_COPIA + 1) +
+    ':00, en la carpeta ' + CARPETA_COPIAS + ' (se conservan ' + COPIAS_A_CONSERVAR + ').');
+}
+
+/** EDITOR: desactiva la copia diaria (no borra las copias). */
+function desactivarCopiasDiarias() {
+  borrarTareas('copiaSeguridadDiaria');
+  Logger.log('Copias diarias desactivadas. Las copias guardadas se conservan.');
+}
+
+/** EDITOR (SOLO LEE): lista las copias guardadas. */
+function listarCopiasDiarias() {
+  var copias = copiasDiarias(carpetaCopias());
+  if (!copias.length) { Logger.log('No hay copias diarias todavía.'); return; }
+  copias.forEach(function (c) {
+    var info = '';
+    try { var d = decodificarDb(c.f.getBlob().getDataAsString()); info = partesActivos(d) + ' partes, ' + d.alumnos.length + ' alumnos'; }
+    catch (e) { info = 'NO SE PUEDE LEER'; }
+    Logger.log(c.fecha + ' · ' + info);
+  });
+}
+
+/**
+ * EDITOR: sustituye el archivo de datos por la copia de la fecha escrita en FECHA_COPIA_A_RESTAURAR.
+ * ATENCIÓN: se pierde lo registrado después de esa copia (salvo lo que los dispositivos tengan pendiente
+ * de enviar). Antes guarda en COPIAS_SEGURIDAD una copia del estado actual (COPIA_ANTES_DE_RESTAURAR_...).
+ */
+function restaurarCopiaDiaria() {
+  if (!FECHA_COPIA_A_RESTAURAR) {
+    Logger.log('Escriba la fecha de la copia en la línea  var FECHA_COPIA_A_RESTAURAR = \'aaaa-mm-dd\';  guarde y vuelva a ejecutar. Copias disponibles:');
+    listarCopiasDiarias();
+    return;
+  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var carpeta = carpetaCopias();
+    var it = carpeta.getFilesByName(PREFIJO_COPIA + FECHA_COPIA_A_RESTAURAR + '.json');
+    if (!it.hasNext()) { Logger.log('No hay copia del ' + FECHA_COPIA_A_RESTAURAR + '. No se ha cambiado nada.'); listarCopiasDiarias(); return; }
+    var texto = it.next().getBlob().getDataAsString();
+    var d;
+    try { d = decodificarDb(texto); } catch (e) { Logger.log('Esa copia no se puede leer. No se ha cambiado nada.'); return; }
+    var f = archivoDb();
+    if (!f) { Logger.log('No se encuentra el archivo de datos.'); return; }
+    var actual = f.getBlob().getDataAsString();
+    var sello = Utilities.formatDate(new Date(), 'Europe/Madrid', 'yyyy-MM-dd_HH-mm');
+    if (actual) carpeta.createFile('COPIA_ANTES_DE_RESTAURAR_' + sello + '.json', actual, MimeType.PLAIN_TEXT);
+    f.setContent(texto);
+    comprobarEscritura(f, texto);
+    var cache = CacheService.getScriptCache();
+    ['DB2_N', 'DB2_FECHA', 'DB2_VERIF'].forEach(function (k) { cache.remove(k); });
+    Logger.log('RESTAURADA la copia del ' + FECHA_COPIA_A_RESTAURAR + ': ' + partesActivos(d) + ' partes, ' + d.alumnos.length + ' alumnos.' +
+      (actual ? ' El estado anterior se ha guardado como COPIA_ANTES_DE_RESTAURAR_' + sello + '.json.' : ''));
+    Logger.log('Vuelva a dejar la línea FECHA_COPIA_A_RESTAURAR vacía (\'\') y guarde.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ------------------------------------------------------------------ Restaurar el archivo de datos (solo desde el editor)
 
 /** Versiones guardadas por Drive del archivo de datos, de la más reciente a la más antigua. */
