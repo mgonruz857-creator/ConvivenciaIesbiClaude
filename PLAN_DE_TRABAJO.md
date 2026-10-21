@@ -158,7 +158,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       `COPIA_DIARIA_aaaa-mm-dd.json`, se conservan 14 (las antiguas a la papelera). No copia si el archivo no se lee o
       tiene muchos menos partes que la última copia (la tarea da error y Google avisa); a mano copia siempre.
       Restaurar: `FECHA_COPIA_A_RESTAURAR` + `restaurarCopiaDiaria` (guarda antes el estado actual).
-      ⏳ Pendiente de probar en PRUEBAS.
+      ✅ Probado en PRUEBAS (21/10/2026: carpeta, copia y activador). ⏳ Pendiente pasar al centro.
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
