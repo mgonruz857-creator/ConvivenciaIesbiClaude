@@ -52,6 +52,8 @@ La app en uso (`convivenciaiesbi.github.io`) no se toca hasta el paso final.
   versiones de Drive (`buscarTextosEnVersiones` + `aplicarTextosRecuperados`); 15 sin texto original (Miguel Ángel
   decidió no intentar una búsqueda menos estricta).
 - Queda en el repositorio del centro una rama sin uso `prueba-permiso-claude` (se puede borrar en GitHub).
+- Aviso de Google del 6/10/2026 ("más de 800 ejecuciones simultáneas") era de la versión 1; no ha vuelto a llegar
+  con la v2 (consultas de ~1 s cada 10 s, en pausa con la pestaña oculta).
 - **Incidencia 21/10/2026**: a las 16:19 Google Drive dejó el archivo de datos con 0 bytes (un guardado que tardó 35 s).
   El servidor se detuvo sin escribir ("No se puede leer el archivo de datos"). Restaurada la versión de las 14:52:43
   (166 partes, 761 alumnos, 86 profesores, 6 expedientes) con `restaurarUltimaVersionValida`; copia en
@@ -154,11 +156,11 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
 - [x] **Expedientes de sanción en el historial del alumno** (Carnet → «Ver Historial»): fechas, modalidad, días que
       acude, conducta art. 37, trámites; botones «Abrir en Sanciones» (lo resalta) y PDF si está completado. Solo consulta.
       ✅ Probado en PRUEBAS y en producción desde el 19/10/2026.
-- [~] **Copias de seguridad diarias**: lunes a viernes hacia las 22:00, subcarpeta `COPIAS_SEGURIDAD`,
+- [x] **Copias de seguridad diarias**: lunes a viernes hacia las 22:00, subcarpeta `COPIAS_SEGURIDAD`,
       `COPIA_DIARIA_aaaa-mm-dd.json`, se conservan 14 (las antiguas a la papelera). No copia si el archivo no se lee o
       tiene muchos menos partes que la última copia (la tarea da error y Google avisa); a mano copia siempre.
       Restaurar: `FECHA_COPIA_A_RESTAURAR` + `restaurarCopiaDiaria` (guarda antes el estado actual).
-      ✅ Probado en PRUEBAS (21/10/2026: carpeta, copia y activador). ⏳ Pendiente pasar al centro.
+      ✅ Probado en PRUEBAS y EN PRODUCCIÓN desde el 21/10/2026 (activarCopiasDiarias ejecutado; carpeta y primera copia comprobadas).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
