@@ -63,7 +63,8 @@ Nunca forzar (`--force`) contra el repositorio del centro.
 - Si se añaden permisos nuevos (correo, tareas…), Google los pide al ejecutar una función desde el editor:
   avisar de que **marque todas las casillas**.
 - Funciones de editor existentes: `restablecerClaveAdministrador`, `diagnosticoDatos`,
-  `activarResumenDiario`, `probarResumenTutores`, `enviarResumenTutores`, `desactivarResumenDiario`
+  `activarResumenDiario`, `probarResumenTutores`, `enviarResumenTutores`, `desactivarResumenDiario`,
+  `revisarVersionesDatos` (solo lee las versiones de Drive), `restaurarUltimaVersionValida` (si el archivo está vacío o dañado)
   (y las de recuperación ya usadas: `prepararPartesParaRevisar`, `buscarTextosEnVersiones`, `aplicarTextosRecuperados`).
 
 ## Pruebas
