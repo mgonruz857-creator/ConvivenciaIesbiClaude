@@ -68,6 +68,27 @@ Nunca forzar (`--force`) contra el repositorio del centro.
   `activarCopiasDiarias`, `copiaSeguridadDiaria`, `listarCopiasDiarias`, `restaurarCopiaDiaria` (con `FECHA_COPIA_A_RESTAURAR`), `desactivarCopiasDiarias`
   (y las de recuperación ya usadas: `prepararPartesParaRevisar`, `buscarTextosEnVersiones`, `aplicarTextosRecuperados`).
 
+## Emergencias con los datos (qué hacer)
+
+Antes de tocar nada, **no restaurar ni borrar sin que Miguel Ángel lo decida** (norma 3). Pedirle capturas.
+
+- **La app dice "No se puede leer el archivo de datos de Drive"** (el servidor se detiene sin escribir; pasó el
+  21/10/2026, Drive dejó el archivo con 0 bytes en un guardado que tardó 35 s):
+  1. En Drive (cuenta del centro), vista de lista de la carpeta: ¿cuántos archivos con el nombre del archivo de
+     datos?, tamaño, fecha. Un duplicado con el mismo nombre también provoca el error (se arregla renombrándolo).
+  2. Si está vacío o dañado: ejecutar `revisarVersionesDatos` (solo lee) y revisar con él la versión buena más
+     reciente (fecha, nº de partes/alumnos/profesores).
+  3. Con su visto bueno: `restaurarUltimaVersionValida` (guarda `COPIA_RESTAURACION_…json`) y comprobar la app.
+  4. Ejecuciones: buscar el `doPost` anormalmente largo a esa hora. Si tardó más de 30 s, la app no recibió la
+     confirmación y el cambio quedó pendiente en ese dispositivo (se reenvía solo).
+- **Hay que volver a un día anterior** (p. ej. borrados por error descubiertos tarde): copias diarias en
+  `COPIAS_SEGURIDAD`; `listarCopiasDiarias`, poner la fecha en `FECHA_COPIA_A_RESTAURAR`, guardar,
+  `restaurarCopiaDiaria` (guarda antes `COPIA_ANTES_DE_RESTAURAR_…`), y volver a dejar la línea vacía.
+  Avisar de que se deshace lo registrado después de esa fecha.
+- **Olvido de la contraseña del administrador**: `restablecerClaveAdministrador`.
+- Protección activa: tras cada guardado el servidor comprueba que el archivo no ha quedado vacío
+  (`comprobarEscritura`); si lo está, reescribe; si sigue, devuelve `ESCRITURA_FALLIDA` y la app conserva el cambio.
+
 ## Pruebas
 
 - Servidor y app con Drive simulado: `pruebas/servidor/*.test.mts` → `npx tsx pruebas/servidor/<nombre>.test.mts`.
