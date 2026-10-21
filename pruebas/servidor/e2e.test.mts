@@ -22,7 +22,7 @@ ok('sin sesión no se descarga nada', !(await G.pullFromGoogleDrive({forceRefres
 let est = await A.consultarCuenta(ADMIN); ok('el administrador aparece pendiente de primer acceso', est.registrado && est.tieneClave===false);
 let r = await A.login(ADMIN,'admin2026',true); ok('primer acceso del administrador', r.success && r.primerAcceso);
 ok('el navegador no guarda contraseñas', ![...g.localStorage._st.values(), ...g.sessionStorage._st.values()].some((v:string)=>v.includes('admin2026')||v.includes('hash')));
-const b=readFileSync('/home/claude/Alumnado_FICTICIO_pruebas.xlsx');
+const b=readFileSync('/home/claude/convivenciaiesbiclaude/pruebas/datos/Alumnado_FICTICIO_pruebas.xlsx');
 S.importarAlumnosDesdeFilas(parsearArchivoODSoExcel(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)).filas, ADMIN);
 S.crearProfesor({email:DOC,nombre:'Ana',apellidos:'Docente',departamento:'Lengua',rol:'ROLE_DOCENTE',estado:'ACTIVO',dni:''}, ADMIN);
 let p = await G.pushToGoogleDrive(); ok('guarda en Drive y el servidor lo confirma', p.success, p.message);
