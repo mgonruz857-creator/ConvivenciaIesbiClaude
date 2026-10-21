@@ -35,7 +35,7 @@ La app en uso (`convivenciaiesbi.github.io`) no se toca hasta el paso final.
       Aviso al cerrar la pestaña y contador "Guardando… (n)" en la cabecera.
 - [x] Sincronización eficiente: comprobación cada 10 s; si no hay cambios el servidor responde
       "sin cambios" (unos 70 bytes) en lugar de enviar toda la base de datos.
-- [ ] Probar la fase 2 en el entorno de pruebas real.
+- [x] Probar la fase 2 en el entorno de pruebas real (probada en pruebas y en uso en producción desde el 9/10/2026).
 - [x] Aviso visible de cambios guardados solo en el dispositivo (franja ámbar y estado en la confirmación del parte).
 
 ## ✅ EN PRODUCCIÓN desde el 9/10/2026 (18:10)

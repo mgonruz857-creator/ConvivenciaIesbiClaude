@@ -32,6 +32,13 @@ Leer esto entero antes de empezar. El estado de cada funcionalidad y las decisio
 - App del centro: `convivenciaiesbi/convivenciaiesbi.github.io` (remoto `centro`) → https://convivenciaiesbi.github.io/
 - Cada push a `main` de cualquiera de los dos publica con GitHub Actions (Pages). Comprobar con
   `gh run list -R <repo> -L 1`.
+- **Se trabaja directamente en `main`** (es lo que publica la app de pruebas; Miguel Ángel prueba ahí). Si la
+  sesión crea una rama propia (`claude/...`), al terminar cada cambio llevarlo a `main` y subirlo, sin esperar a que
+  lo pida. No abrir pull requests salvo que lo pida.
+- **Acceso al repositorio del centro**: cuando Miguel Ángel diga "pásalo a la app del centro", añadir a la sesión
+  `convivenciaiesbi/convivenciaiesbi.github.io` (permiso de escritura) y configurarlo como remoto `centro`
+  (`git remote add centro https://github.com/convivenciaiesbi/convivenciaiesbi.github.io`), y seguir el
+  procedimiento de abajo. Si la rama local `produccion` no existe: `git fetch origin produccion && git checkout produccion`.
 
 ### Pasar a la app del centro (solo cuando lo diga Miguel Ángel)
 
