@@ -144,4 +144,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
 - [x] **Expedientes de sanción en el historial del alumno** (Carnet → «Ver Historial»): fechas, modalidad, días que
       acude, conducta art. 37, trámites; botones «Abrir en Sanciones» (lo resalta) y PDF si está completado. Solo consulta.
       ✅ Probado en PRUEBAS y en producción desde el 19/10/2026.
+- [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
+      teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
+      previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
 - [ ] Siguientes funcionalidades: pendientes de que Miguel Ángel las detalle.
