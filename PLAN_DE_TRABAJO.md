@@ -170,3 +170,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
 
 - Documento técnico actualizado (21/10/2026) como documento privado de Miguel Ángel; **no se sube al repositorio** (es público:
   decisión de Miguel Ángel). Eliminado el antiguo `ARQUITECTURA_Y_TECNOLOGIAS.md` (desfasado: hablaba de Netlify y de la v1).
+- Vídeo «SIGC-BI · Guía para el profesorado» (21/10/2026): MP4 de 5 min 30 s, subtítulos sin voz y 9 capítulos (entrar, poner
+  un parte, PDF, Mis partes, Aula PAC, Mi perfil, Mi Tutoría, Carnet de Puntos, manual y cerrar sesión). Grabado con la app de
+  pruebas ejecutada en local, servidor simulado y datos ficticios. No está en el repositorio: vive en los archivos del proyecto
+  (`video-profesorado/`, con los guiones para regenerarlo si cambian las pantallas).
