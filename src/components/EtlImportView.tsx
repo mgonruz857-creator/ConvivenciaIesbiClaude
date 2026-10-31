@@ -79,7 +79,6 @@ export const EtlImportView: React.FC<EtlImportViewProps> = ({
 
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
-  const [modalVaciarOpen, setModalVaciarOpen] = useState(false);
 
   // Academic year management state
   const [modalNuevoCursoOpen, setModalNuevoCursoOpen] = useState(false);
@@ -264,7 +263,28 @@ El Amrani Youssef,4º ESO D`;
     }
   };
 
+  // Número de registros que se van a importar (para la confirmación previa)
+  const contarRegistrosAImportar = (): number => {
+    if (activeImportTab === 'alumnos' && odsLoadedRows && odsLoadedRows.length > 0) return odsLoadedRows.length;
+    if (activeImportTab !== 'alumnos' && odsLoadedProfesores && odsLoadedProfesores.length > 0) return odsLoadedProfesores.length;
+    const lines = csvContent.split(/\r?\n/).filter(l => l.trim().length > 0);
+    const first = (lines[0] || '').toLowerCase();
+    const tieneCabecera = ['apellido', 'nombre', 'alumno', 'correo', 'email', 'curso'].some(k => first.includes(k));
+    return Math.max(0, lines.length - (tieneCabecera ? 1 : 0));
+  };
+
   const handleRunImport = () => {
+    const n = contarRegistrosAImportar();
+    const tipo = activeImportTab === 'alumnos'
+      ? (n === 1 ? 'alumno/a' : 'alumnos/as')
+      : (n === 1 ? 'docente' : 'docentes');
+    if (!window.confirm(
+      `Se van a importar ${n} ${tipo}.\n\n` +
+      'Los que no existan se darán de alta y los que ya existan se actualizarán con los datos del archivo. ' +
+      'No se borra a nadie.\n\n¿Continuar con la importación?'
+    )) {
+      return;
+    }
     try {
       if (activeImportTab === 'alumnos') {
         if (odsLoadedRows && odsLoadedRows.length > 0) {
@@ -409,17 +429,6 @@ El Amrani Youssef,4º ESO D`;
     }, 400);
   };
 
-  const handleConfirmarVaciar = () => {
-    StorageService.vaciarAlumnosYSanciones(currentUser.email);
-    setModalVaciarOpen(false);
-    setActionFeedbackMsg({
-      type: 'success',
-      text: 'Se han eliminado correctamente todos los alumnos y partes generados. El censo ha quedado listo para la ingesta oficial.'
-    });
-    onImportCompleted();
-    setTimeout(() => setActionFeedbackMsg(null), 6000);
-  };
-
   const handleCrearNuevoCurso = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoCursoInput.trim()) return;
@@ -440,13 +449,6 @@ El Amrani Youssef,4º ESO D`;
     } else {
       alert(res.error || 'Error al tramitar la apertura del nuevo curso escolar.');
     }
-  };
-
-  const handleLoadSampleInEditor = () => {
-    setOdsLoadedRows(null);
-    setOdsLoadedProfesores(null);
-    setLoadedFileName('');
-    setCsvContent(activeImportTab === 'alumnos' ? sampleAlumnosCsv : sampleProfesoresCsv);
   };
 
   const handleConfirmarBajaProfesor = () => {
@@ -832,15 +834,6 @@ El Amrani Youssef,4º ESO D`;
               <span>{isBackingUp ? 'Generando y descargando...' : 'Descargar Snapshot Backup (.JSON)'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setModalVaciarOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-              title="Elimina todos los alumnos y partes generados"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-              <span>Vaciar Alumnos y Partes</span>
-            </button>
           </div>
         </div>
 
@@ -2568,13 +2561,6 @@ El Amrani Youssef,4º ESO D`;
                 />
               </label>
 
-              <button
-                type="button"
-                onClick={handleLoadSampleInEditor}
-                className="px-3 py-2 bg-white border border-sky-200 hover:bg-sky-50 text-sky-950 rounded-xl text-xs font-medium transition-colors cursor-pointer"
-              >
-                Cargar datos de prueba
-              </button>
             </div>
           </div>
 
@@ -2824,50 +2810,6 @@ El Amrani Youssef,4º ESO D`;
         </div>
       </div>
 
-      {/* Modal Confirmación de Vaciado de Alumnos y Partes */}
-      {modalVaciarOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-100">
-            <div className="flex items-center gap-2 text-rose-700 font-bold text-sm">
-              <Trash2 className="w-5 h-5 text-rose-600" />
-              <span>Eliminar Alumnos y Partes (Puesta a Cero)</span>
-            </div>
-
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-950 space-y-2">
-              <p className="font-bold">
-                ¿Estás seguro de que deseas eliminar a todos los alumnos y todos los partes disciplinarios?
-              </p>
-              <ul className="list-disc list-inside text-[11px] text-rose-800 space-y-1">
-                <li>Se vaciará el censo completo de alumnos.</li>
-                <li>Se eliminarán todos los partes disciplinarios registrados.</li>
-                <li>Se vaciarán las compensaciones e historial de movimientos.</li>
-                <li><strong>El claustro de profesores y la configuración del centro se mantendrán intactos.</strong></li>
-              </ul>
-            </div>
-
-            <p className="text-xs text-slate-500">
-              Esta acción deja el sistema completamente limpio para proceder con la importación oficial de los archivos definitivos del centro.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setModalVaciarOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmarVaciar}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors cursor-pointer shadow-xs"
-              >
-                Sí, Eliminar Alumnos y Partes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

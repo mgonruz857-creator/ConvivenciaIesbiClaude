@@ -14,7 +14,6 @@ import {
   FileText, 
   Lock, 
   Layers, 
-  RotateCcw,
   Wifi,
   ExternalLink,
   Settings,
@@ -44,7 +43,6 @@ interface DriveAuditModalProps {
   sanciones: Sancion[];
   alumnos: Alumno[];
   currentUserEmail: string;
-  onResetData: () => void;
 }
 
 export const DriveAuditModal: React.FC<DriveAuditModalProps> = ({
@@ -53,7 +51,6 @@ export const DriveAuditModal: React.FC<DriveAuditModalProps> = ({
   sanciones,
   alumnos,
   currentUserEmail,
-  onResetData,
 }) => {
   const [isSimulatingSync, setIsSimulatingSync] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
@@ -766,17 +763,7 @@ export const DriveAuditModal: React.FC<DriveAuditModalProps> = ({
 
         {/* Actions bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-          <button
-            onClick={() => {
-              if (window.confirm('¿Deseas vaciar y eliminar todos los alumnos y partes registrados? El censo quedará a 0 alumnos.')) {
-                onResetData();
-              }
-            }}
-            className="inline-flex items-center gap-1 text-xs text-rose-700 hover:text-rose-900 underline font-medium cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Vaciar censo y restablecer a estado inicial (0 alumnos)</span>
-          </button>
+          <span />
 
           <div className="flex items-center gap-2">
             <button

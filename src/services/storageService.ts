@@ -2484,46 +2484,6 @@ export class StorageService {
   }
 
   /**
-   * Elimina a todos los alumnos y partes disciplinarios generados
-   */
-  static vaciarAlumnosYSanciones(usuarioEmail: string): void {
-    const prevSanciones = this.getSanciones();
-    prevSanciones.forEach(s => {
-      if (s?.id_sancion) this.addDeletedSancionId(s.id_sancion);
-    });
-    const prevAlumnos = this.getAlumnos();
-    prevAlumnos.forEach(a => {
-      if (a?.id_alumno) this.addDeletedAlumnoId(a.id_alumno);
-    });
-
-    this.saveAlumnos([]);
-    this.saveSanciones([]);
-    this.saveCompensaciones([]);
-    this.saveMovimientos([]);
-    this.addAuditLog(
-      usuarioEmail,
-      'ACTUALIZACION_SISTEMA',
-      'Sistema/VaciadoAlumnosYSanciones',
-      'Eliminación completa de todos los alumnos y partes disciplinarios realizada con éxito.'
-    );
-  }
-
-  /**
-   * Reset database back to seed for demo or test purposes
-   */
-  static resetToSeed(usuarioEmail: string): void {
-    this.saveDeletedSancionIds([]);
-    this.saveDeletedAlumnoIds([]);
-    this.clearPendingSyncSancionIds();
-    this.saveAlumnos(ALUMNOS_INICIALES);
-    this.saveSanciones(SANCIONES_INICIALES);
-    this.saveCompensaciones(COMPENSACIONES_INICIALES);
-    this.saveAuditLogs(AUDIT_LOGS_INICIALES);
-    this.saveMovimientos(MOVIMIENTOS_INICIALES);
-    this.addAuditLog(usuarioEmail, 'IMPORTACION_MASIVA', 'Sistema/Reset', 'Restablecimiento a datos oficiales iniciales V0.');
-  }
-
-  /**
    * Create Drive Snapshot Backup (EC-02)
    */
   static crearSnapshotBackup(usuarioEmail: string): string {

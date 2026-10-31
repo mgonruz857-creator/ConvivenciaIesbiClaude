@@ -161,6 +161,11 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       tiene muchos menos partes que la última copia (la tarea da error y Google avisa); a mano copia siempre.
       Restaurar: `FECHA_COPIA_A_RESTAURAR` + `restaurarCopiaDiaria` (guarda antes el estado actual).
       ✅ Probado en PRUEBAS y EN PRODUCCIÓN desde el 21/10/2026 (activarCopiasDiarias ejecutado; carpeta y primera copia comprobadas).
+- [x] **Quitar botones peligrosos de borrado y datos de prueba** (decisión de Miguel Ángel 31/10/2026): eliminados
+      «Cargar datos de prueba» (Importar), «Vaciar Alumnos y Partes» (Drive & Carga ETL), «Vaciar censo y restablecer a estado
+      inicial» (ventana de Drive) y «Vaciar Censo» (Carnet de Puntos). Se mantiene solo la opción de vaciar alumnos dentro de
+      «Abrir nuevo curso escolar». Antes de importar, la app pide confirmación con el nº de alumnos/docentes que se van a importar.
+      ⏳ En PRUEBAS desde el 31/10/2026; pendiente de pasar a la app del centro (no toca el servidor).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.

@@ -475,16 +475,6 @@ export default function App() {
     return result;
   };
 
-  // Reset all data to initial seed
-  const handleResetData = () => {
-    const userEmail = currentUser ? currentUser.email : 'mgonruz857@g.educaand.es';
-    StorageService.resetToSeed(userEmail);
-    refreshAllData();
-    notifyLocalSync();
-    GoogleDriveSyncService.triggerFastSync(0);
-    setDriveModalOpen(false);
-  };
-
   // 1. Initial Login Screen if no user session
   if (!currentUser) {
     return (
@@ -805,7 +795,6 @@ export default function App() {
           sanciones={sanciones}
           alumnos={alumnos}
           currentUserEmail={currentUser.email}
-          onResetData={handleResetData}
         />
       )}
 
