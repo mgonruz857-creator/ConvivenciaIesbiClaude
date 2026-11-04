@@ -315,6 +315,13 @@ export default function App() {
   const alumnosConCeroPuntos = useMemo(() => {
     return StorageService.getAlumnosPendientesDeExpediente();
   }, [alumnos, sanciones, expedientes]);
+  // El aviso sigue mientras el expediente esté abierto sin completar (decisión de Miguel Ángel, 04/11/2026)
+  const expedientesSinCompletar = useMemo(() => {
+    return expedientes
+      .filter(e => !e.completado)
+      .map(e => ({ exp: e, alumno: alumnoMap.get(e.id_alumno) }))
+      .filter((x): x is { exp: ExpedienteSancion; alumno: Alumno } => !!x.alumno && x.alumno.estado !== 'BAJA');
+  }, [expedientes, alumnoMap]);
 
   // Aviso de partes nuevos en la tutoría (lo visto se guarda en el servidor, por tutor/a)
   const grupoTutoria = currentUser?.tutor_de_grupo || '';
@@ -552,12 +559,13 @@ export default function App() {
       )}
 
       {/* Global Alert Banner for 0 Points (V0 - Sección 7 & 9) - Visible únicamente para administradores / Jefatura */}
-      {isAdmin && alumnosConCeroPuntos.length > 0 && !expulsionBannerDismissed && (
+      {isAdmin && (alumnosConCeroPuntos.length > 0 || expedientesSinCompletar.length > 0) && !expulsionBannerDismissed && (
         <div className="bg-rose-900 text-white px-4 py-2.5 text-xs flex items-center justify-between border-b border-rose-950 shadow-xs">
           <div className="flex items-center gap-2 max-w-7xl mx-auto flex-1 flex-wrap">
             <AlertOctagon className="w-4 h-4 text-rose-300 shrink-0" />
             <span>
-              <strong>Aviso a Jefatura de Estudios / Convivencia (V0):</strong> {alumnosConCeroPuntos.length} alumno(s) con 0 puntos sin expediente de sanción abierto:{' '}
+              <strong>Aviso a Jefatura de Estudios / Convivencia (V0):</strong>{' '}
+              {alumnosConCeroPuntos.length > 0 && <>{alumnosConCeroPuntos.length} alumno(s) con 0 puntos sin expediente de sanción abierto:{' '}</>}
               {alumnosConCeroPuntos.map((a, idx) => (
                 <span key={a.id_alumno}>
                   {idx > 0 && ', '}
@@ -574,7 +582,26 @@ export default function App() {
                     {a.nombre} {a.apellidos} ({a.grupo})
                   </button>
                 </span>
-              ))}. (Recordatorio: la app no impone expulsiones automáticas).
+              ))}{alumnosConCeroPuntos.length > 0 && '. '}
+              {expedientesSinCompletar.length > 0 && (
+                <>
+                  {expedientesSinCompletar.length} expediente(s) de sanción sin completar:{' '}
+                  {expedientesSinCompletar.map(({ exp, alumno }, idx) => (
+                    <span key={exp.id_expediente}>
+                      {idx > 0 && ', '}
+                      <button
+                        type="button"
+                        onClick={() => { setExpedienteResaltado(exp.id_expediente); setCurrentView('sanciones'); }}
+                        className="underline font-bold text-amber-200 hover:text-white cursor-pointer"
+                        title="Ir al expediente en Sanciones"
+                      >
+                        {alumno.nombre} {alumno.apellidos} ({alumno.grupo})
+                      </button>
+                    </span>
+                  ))}.{' '}
+                </>
+              )}
+              (Recordatorio: la app no impone expulsiones automáticas).
             </span>
             <button
               type="button"
