@@ -76,6 +76,7 @@ const TRAMOS_HEATMAP: TramoHorario[] = [
 
 const UBICACIONES_LIST: string[] = [
   'Aula ordinaria',
+  'Guardia',
   'Pasillos',
   'Patio',
   'Cafetería',
@@ -582,7 +583,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       const clean = rawLoc.toLowerCase();
       let key = 'Otros';
 
-      if (clean.includes('aula') || clean.includes('clase')) {
+      if (clean.includes('guardia')) {
+        key = 'Guardia';
+      } else if (clean.includes('aula') || clean.includes('clase')) {
         key = 'Aula ordinaria';
       } else if (clean.includes('pasillo') || clean.includes('edificio a') || clean.includes('aseo')) {
         key = 'Pasillos';
@@ -1539,7 +1542,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        loc.includes('Pasillo') || loc.includes('Patio')
+                        loc === 'Guardia'
+                          ? 'bg-rose-500'
+                          : loc.includes('Pasillo') || loc.includes('Patio')
                           ? 'bg-amber-500'
                           : 'bg-sky-600'
                       }`}

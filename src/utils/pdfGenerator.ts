@@ -849,7 +849,7 @@ export async function generateMemoriaConvivenciaPdf(
   curY += 3;
 
   const ubicBoxW = contentWidth;
-  const ubicBoxH = 46;
+  const ubicBoxH = 52;
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
   doc.roundedRect(marginX, curY, ubicBoxW, ubicBoxH, 1, 1, 'FD');
@@ -858,7 +858,7 @@ export async function generateMemoriaConvivenciaPdf(
   const totalUbicCount = Math.max(1, stats.topUbicaciones.reduce((acc, u) => acc + u[1], 0));
 
   let uY = curY + 5;
-  stats.topUbicaciones.slice(0, 6).forEach((u, idx) => {
+  stats.topUbicaciones.slice(0, 7).forEach((u, idx) => {
     const label = u[0];
     const count = u[1];
     const pct = Math.round((count / totalUbicCount) * 100);
@@ -880,7 +880,8 @@ export async function generateMemoriaConvivenciaPdf(
       [245, 158, 11], // Amber
       [239, 68, 68],  // Red
       [168, 85, 247], // Purple
-      [100, 116, 139] // Slate
+      [100, 116, 139], // Slate
+      [16, 185, 129]  // Emerald
     ];
     const c = colors[idx % colors.length];
     doc.setFillColor(c[0], c[1], c[2]);

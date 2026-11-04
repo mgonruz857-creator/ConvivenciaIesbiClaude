@@ -172,6 +172,10 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       −5 a −10). Se mantienen los códigos: los partes ya puestos conservan sus puntos (van guardados en cada parte) y se
       muestran con el nombre nuevo. Puntos de B pendientes de confirmar por Miguel Ángel. No toca el servidor.
       ✅ En PRUEBAS desde el 4/11/2026.
+- [x] **«Guardia» como lugar del hecho** (petición de Miguel Ángel 04/11/2026, para tener estadísticas de las incidencias
+      en guardias): nueva opción «Guardia – Servicio de guardia» en el paso 3 del parte y al editar un parte; aparece en
+      Estadísticas (distribución por lugar, barra en rojo) y en el informe PDF (sección 5, ahora con 7 lugares). Los partes
+      antiguos no cambian. No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.

@@ -179,7 +179,7 @@ export const UserManualModal: React.FC<UserManualModalProps> = ({
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                     <strong className="text-slate-900 block mb-1">Paso 2: Hora lectiva y Ubicación</strong>
-                    <p>Indica el tramo horario (1ª, 2ª, Recreo, 4ª...) y el espacio donde ocurrió el incidente (Aula ordinaria, Pasillos, Patio, Biblioteca, etc.).</p>
+                    <p>Indica el tramo horario (1ª, 2ª, Recreo, 4ª...) y el espacio donde ocurrió el incidente (Aula ordinaria, Guardia, Pasillos, Patio, Biblioteca, etc.).</p>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">

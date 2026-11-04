@@ -224,6 +224,7 @@ export type TramoHorario =
 
 export type UbicacionCentro = 
   | 'Aula ordinaria'
+  | 'Guardia'
   | 'Pasillos'
   | 'Patio'
   | 'Cafetería'
@@ -238,6 +239,7 @@ export type UbicacionCentro =
 
 export const LISTA_UBICACIONES_OFICIALES: { codigo: string; label: string; icono: string; descripcion: string }[] = [
   { codigo: 'Aula ordinaria', label: 'Aula ordinaria', icono: '🏫', descripcion: 'Clase o aula de docencia' },
+  { codigo: 'Guardia', label: 'Guardia', icono: '🛡️', descripcion: 'Servicio de guardia (grupo sin su profesor)' },
   { codigo: 'Pasillos', label: 'Pasillos', icono: '🚶', descripcion: 'Pasillos, escaleras o distribuidores' },
   { codigo: 'Patio', label: 'Patio', icono: '🌳', descripcion: 'Patios y zonas exteriores de recreo' },
   { codigo: 'Cafetería', label: 'Cafetería', icono: '☕', descripcion: 'Cafetería y comedor escolar' },

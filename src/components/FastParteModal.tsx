@@ -792,8 +792,8 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
             </span>
           </div>
 
-          {/* Cuadrícula interactiva de 6 ubicaciones requeridas */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {/* Cuadrícula interactiva de ubicaciones (7, con Guardia) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
             {LISTA_UBICACIONES_OFICIALES.map((u) => {
               const isSelected = ubicacion === u.codigo;
               return (
