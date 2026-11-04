@@ -144,7 +144,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       las casillas, para revisar los datos; y 5ª casilla «Parte de sanción guardado en Séneca». Los expedientes
       ya completados antes del cambio siguen como completados (la casilla de Séneca aparece sin marcar y se puede
       marcar); los que estén en trámite necesitan las 5. En el historial del alumno el PDF sigue apareciendo solo
-      con el expediente completado. Solo app (sin cambios en el servidor). ⏳ En PRUEBAS.
+      con el expediente completado. Solo app (sin cambios en el servidor). ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026.
       El aviso rojo de 0 puntos tiene en cuenta también los ajustes manuales de puntos (sin parte): si un alumno con
       expediente anterior vuelve a 0 por un ajuste, vuelve a salir. Se compara el momento de registro (no solo el día):
       un parte o ajuste registrado después de abrir el expediente, aunque sea el mismo día, vuelve a avisar (04/11/2026).
@@ -182,25 +182,25 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       muestran con el nombre nuevo. Puntos confirmados por Miguel Ángel (4/11).
       En la conducta B no se ofrece la medida «Retirada/depósito del móvil»; al elegirla, la medida por defecto pasa a ser
       «Derivación inmediata a Jefatura» (al editar un parte antiguo se conserva la medida que tenía guardada). No toca el servidor.
-      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+      ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
 - [x] **«Guardia» como lugar del hecho** (petición de Miguel Ángel 04/11/2026, para tener estadísticas de las incidencias
       en guardias): nueva opción «Guardia – Servicio de guardia» en el paso 3 del parte y al editar un parte; aparece en
       Estadísticas (distribución por lugar, barra en rojo) y en el informe PDF (sección 5, ahora con 7 lugares). Los partes
-      antiguos no cambian. No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+      antiguos no cambian. No toca el servidor. ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
 - [x] **Partes por docente** (petición de Miguel Ángel 04/11/2026; reparto acordado el mismo día): en el **Feed Diario**,
       recuadro «Docentes que han puesto parte hoy» (solo hoy, sin selector); al pulsar un docente la lista de partes se filtra por él
       (etiqueta «Docente: …» para quitarlo). En **Estadísticas**, al final, tabla «Partes por docente» con Esta semana (desde el
       lunes) · Este mes · Curso (el curso elegido arriba): nº de partes, leves/graves/muy graves, puntos restados y último parte;
       ordenada de más a menos; 8 visibles y «Ver los N docentes»; botón CSV. Solo docentes con algún parte. Lo demás de ambas
       secciones no cambia. Solo Jefatura/Convivencia (las dos secciones ya eran solo suyas). No está en el informe PDF (pendiente
-      de que Miguel Ángel diga si lo quiere). No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+      de que Miguel Ángel diga si lo quiere). No toca el servidor. ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
 - [x] **Histórico de sanciones por alumno** (petición de Miguel Ángel 4/11/2026): en cada alumno se ve cuántas veces ha
       sido sancionado/a (nº de expedientes de sanción) y cuántas veces se ha quedado a 0 puntos (cada vez que el saldo pasa
       de más de 0 a 0; recibir otro parte estando ya a 0 no cuenta). Aparece en la tarjeta del Carnet de Puntos, en «Ver
       Historial» y en la tabla de Mi Tutoría (columnas «Sanciones» y «Veces a 0»). Se calcula en la app con los datos que ya
       hay (`historicoSancionesPorAlumno` en `carnetPuntos.ts`). Los ajustes manuales «Quitar puntos sin parte» no cuentan
       como otra vez a 0 (sirven para mantener a 0 a quien recuperó un punto mientras se tramita su sanción). No toca el servidor.
-      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+      ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
 - [x] **Quitar puntos sin parte (ajuste manual)** (petición de Miguel Ángel 4/11/2026: alumnado a 0 que recupera 1 punto
       a la semana antes de que se tramite su sanción). Jefatura/Convivencia, en Carnet de Puntos («− Quitar puntos») o en
       «Ver Historial»: de 1 punto al saldo actual (atajo «Dejar en 0»), motivo obligatorio. Queda en el historial del alumno
@@ -210,7 +210,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       Se puede anular desde el historial («Anular ajuste», con motivo; no se borra, queda marcado). Se guarda como
       compensación con puntos negativos, así que **no necesita cambio en el servidor** (el profesorado sin privilegios recibe
       el signo pero no el motivo). Prueba: `pruebas/servidor/ajuste_puntos.test.mts`.
-      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+      ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
@@ -218,6 +218,9 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
 
 ## 📄 Documentación técnica
 
+- Manuales del profesorado y del Equipo de Convivencia actualizados el 04/11/2026 con los cambios de ese día (móvil A/B,
+  Guardia, 5 trámites y PDF sin casillas, aviso de expedientes sin completar, quitar puntos sin parte, sanciones y veces a 0,
+  partes por docente; quitada la mención a los botones de vaciar).
 - Documento técnico actualizado (21/10/2026) como documento privado de Miguel Ángel; **no se sube al repositorio** (es público:
   decisión de Miguel Ángel). Eliminado el antiguo `ARQUITECTURA_Y_TECNOLOGIAS.md` (desfasado: hablaba de Netlify y de la v1).
 - Vídeo «SIGC-BI · Guía para el profesorado» (21/10/2026): MP4 de 5 min 30 s, subtítulos sin voz y 9 capítulos (entrar, poner
