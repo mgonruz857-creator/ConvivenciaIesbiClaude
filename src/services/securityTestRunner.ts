@@ -429,7 +429,7 @@ export class SecurityTestRunner {
                 message: `Inconsistencia en código ROF ${item.codigo}: falta leve con deducción fuera de rango (${item.puntos_descuento} pts).`,
               };
             }
-            if (item.tipo === 'GRAVE' && (item.puntos_descuento < 5 || item.puntos_descuento > 10)) {
+            if (item.tipo === 'GRAVE' && item.codigo !== 'GRA-MOVIL-USO' && (item.puntos_descuento < 5 || item.puntos_descuento > 10)) {
               return {
                 passed: false,
                 message: `Inconsistencia en código ROF ${item.codigo}: falta grave con deducción fuera de rango (${item.puntos_descuento} pts).`,

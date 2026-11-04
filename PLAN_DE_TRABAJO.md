@@ -176,7 +176,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       «Abrir nuevo curso escolar». Antes de importar, la app pide confirmación con el nº de alumnos/docentes que se van a importar.
       ✅ En PRUEBAS y EN PRODUCCIÓN desde el 31/10/2026 (no toca el servidor).
 - [x] **Dos conductas de móvil** (petición de Miguel Ángel 4/11/2026): A = «Uso no autorizado del móvil, que entrega y
-      guarda cuando se solicita» (código `GRA-MOVIL-USO`, −8, igual que antes) y B = «Uso no autorizado del móvil, que NO
+      guarda cuando se solicita» (código `GRA-MOVIL-USO`; era −8 y pasa a **0 puntos**, petición de Miguel Ángel 4/11 a las 12:13; también 0 en 1º y 2º INF; los partes ya puestos con −8 los conservan) y B = «Uso no autorizado del móvil, que NO
       entrega o guarda cuando se solicita» (código `GRA-MOVIL-ENTREGA`, antes «Negativa a guardar/entregar el móvil», pasa de
       −5 a −10). Se mantienen los códigos: los partes ya puestos conservan sus puntos (van guardados en cada parte) y se
       muestran con el nombre nuevo. Puntos confirmados por Miguel Ángel (4/11).

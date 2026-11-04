@@ -350,7 +350,7 @@ export const EditarParteModal: React.FC<EditarParteModalProps> = ({
             >
               {conductasDisponibles.map(c => (
                 <option key={c.codigo} value={c.codigo}>
-                  [{c.codigo}] {c.titulo} ({c.tipo === 'ACADEMICO' ? '0 pts' : `-${c.puntos_descuento} pts`})
+                  [{c.codigo}] {c.titulo} ({c.tipo === 'ACADEMICO' || c.puntos_descuento === 0 ? '0 pts' : `-${c.puntos_descuento} pts`})
                 </option>
               ))}
             </select>

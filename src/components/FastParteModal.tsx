@@ -667,7 +667,7 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
             >
               <div>CONDUCTAS GRAVES</div>
               <div className={`text-[10px] font-normal ${activeTabTipo === 'GRAVE' ? 'text-rose-100' : 'text-slate-400'}`}>
-                {isInfGroup ? 'Régimen INF (Siempre -10 pts)' : 'Art. 37 / Móvil (-5 a -10 pts)'}
+                {isInfGroup ? 'Régimen INF (Siempre -10 pts)' : 'Art. 37 / Móvil (0 a -10 pts)'}
               </div>
             </button>
 
