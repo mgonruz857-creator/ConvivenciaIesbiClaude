@@ -40,6 +40,7 @@ import {
 import { 
   CATALOGO_CONDUCTAS_V0, 
   MEDIDAS_INMEDIATAS_CATALOG,
+  medidasInmediatasPermitidas,
   obtenerTipificacionNormativa,
   calcularPuntosInfraccion,
   esGrupoInformatica
@@ -234,8 +235,11 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
   // Selección de conducta
   const handleSelectConducta = (cod: CodigoConductaV0) => {
     setSelectedConductaCodigo(cod);
-    if (cod === 'GRA-MOVIL-USO' || cod === 'GRA-MOVIL-ENTREGA') {
+    if (cod === 'GRA-MOVIL-USO') {
       setMedidaInmediata('RETIRADA_MOVIL');
+    } else if (cod === 'GRA-MOVIL-ENTREGA') {
+      // No entrega el móvil: no cabe la retirada; por defecto, derivación a Jefatura
+      setMedidaInmediata('DERIVACION_JEFATURA');
     } else if (cod === 'LEV-PASILLO') {
       setMedidaInmediata('AMONESTACION_VERBAL');
     } else if (cod === 'GRA-AGRESION' || cod === 'GRA-AMENAZAS') {
@@ -1007,7 +1011,7 @@ export const FastParteModal: React.FC<FastParteModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {MEDIDAS_INMEDIATAS_CATALOG.map(m => {
+            {medidasInmediatasPermitidas(selectedConductaCodigo).map(m => {
               const isSelected = medidaInmediata === m.valor;
               return (
                 <button

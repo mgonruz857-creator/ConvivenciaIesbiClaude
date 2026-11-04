@@ -272,6 +272,18 @@ export const MEDIDAS_INMEDIATAS_CATALOG: {
 ];
 
 /**
+ * Medidas inmediatas que se pueden elegir para una conducta.
+ * Si el alumno NO entrega ni guarda el móvil (GRA-MOVIL-ENTREGA), no tiene sentido
+ * ofrecer la retirada/depósito del móvil.
+ */
+export function medidasInmediatasPermitidas(codigoConducta: string) {
+  if (codigoConducta === 'GRA-MOVIL-ENTREGA') {
+    return MEDIDAS_INMEDIATAS_CATALOG.filter(m => m.valor !== 'RETIRADA_MOVIL');
+  }
+  return MEDIDAS_INMEDIATAS_CATALOG;
+}
+
+/**
  * Mapeo de compatibilidad con vistas previas
  */
 export const MATRIZ_ROF_CATALOG: Record<string, InfraccionROFDef> = {

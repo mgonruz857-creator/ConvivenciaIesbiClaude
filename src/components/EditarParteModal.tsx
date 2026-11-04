@@ -35,6 +35,7 @@ import {
 import { 
   CATALOGO_CONDUCTAS_V0, 
   MEDIDAS_INMEDIATAS_CATALOG,
+  medidasInmediatasPermitidas,
   obtenerTipificacionNormativa,
   calcularPuntosInfraccion,
   esGrupoInformatica
@@ -146,6 +147,9 @@ export const EditarParteModal: React.FC<EditarParteModalProps> = ({
     setSelectedConductaCodigo(codigo);
     const pts = calcularPuntosInfraccion(codigo, targetAlumno?.grupo);
     setPuntosRestadosInput(pts);
+    if (codigo === 'GRA-MOVIL-ENTREGA' && medidaInmediata === 'RETIRADA_MOVIL') {
+      setMedidaInmediata('DERIVACION_JEFATURA');
+    }
   };
 
   // Cálculo de simulación de puntos de carnet
@@ -473,7 +477,11 @@ export const EditarParteModal: React.FC<EditarParteModalProps> = ({
                 onChange={(e) => setMedidaInmediata(e.target.value as MedidaInmediataAdoptada)}
                 className="w-full text-xs rounded-xl border border-slate-300 p-2 bg-white text-slate-800"
               >
-                {MEDIDAS_INMEDIATAS_CATALOG.map(m => (
+                {MEDIDAS_INMEDIATAS_CATALOG.filter(m =>
+                  // las permitidas para la conducta; si no se cambia la conducta, también la que ya tenía guardada el parte
+                  (m.valor === sancion.medida_inmediata && selectedConductaCodigo === sancion.codigo_infraccion) ||
+                  medidasInmediatasPermitidas(selectedConductaCodigo).some(p => p.valor === m.valor)
+                ).map(m => (
                   <option key={m.valor} value={m.valor}>{m.label}</option>
                 ))}
               </select>

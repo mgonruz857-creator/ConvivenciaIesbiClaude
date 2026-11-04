@@ -179,7 +179,9 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       guarda cuando se solicita» (código `GRA-MOVIL-USO`, −8, igual que antes) y B = «Uso no autorizado del móvil, que NO
       entrega o guarda cuando se solicita» (código `GRA-MOVIL-ENTREGA`, antes «Negativa a guardar/entregar el móvil», pasa de
       −5 a −10). Se mantienen los códigos: los partes ya puestos conservan sus puntos (van guardados en cada parte) y se
-      muestran con el nombre nuevo. Puntos confirmados por Miguel Ángel (4/11). No toca el servidor.
+      muestran con el nombre nuevo. Puntos confirmados por Miguel Ángel (4/11).
+      En la conducta B no se ofrece la medida «Retirada/depósito del móvil»; al elegirla, la medida por defecto pasa a ser
+      «Derivación inmediata a Jefatura» (al editar un parte antiguo se conserva la medida que tenía guardada). No toca el servidor.
       🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
 - [x] **«Guardia» como lugar del hecho** (petición de Miguel Ángel 04/11/2026, para tener estadísticas de las incidencias
       en guardias): nueva opción «Guardia – Servicio de guardia» en el paso 3 del parte y al editar un parte; aparece en
