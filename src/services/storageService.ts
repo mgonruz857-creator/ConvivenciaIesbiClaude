@@ -1513,15 +1513,19 @@ export class StorageService {
     const compensaciones = this.getCompensaciones();
     return this.getAlumnos().filter(a => {
       if (a.estado === 'BAJA' || a.puntos_actuales !== 0) return false;
-      // Último hecho que quitó puntos: un parte o un ajuste manual de puntos (sin parte, no anulado)
-      const ultimoParte = [
-        ...sanciones.filter(s => s.id_alumno === a.id_alumno && (s.puntos_restados || 0) > 0).map(s => s.fecha),
-        ...compensaciones.filter(c => c.id_alumno === a.id_alumno && !c.anulada && esAjusteManual(c)).map(c => c.fecha_completada),
+      // Último hecho que quitó puntos (un parte o un ajuste manual no anulado), por el momento en que se
+      // registró: así un parte puesto el mismo día pero DESPUÉS de abrir el expediente vuelve a avisar.
+      const momento = (ts?: string, fecha?: string) => (ts && ts.length > 10 ? ts : (fecha || ''));
+      const ultimo = [
+        ...sanciones.filter(s => s.id_alumno === a.id_alumno && (s.puntos_restados || 0) > 0).map(s => momento(s.timestamp, s.fecha)),
+        ...compensaciones.filter(c => c.id_alumno === a.id_alumno && !c.anulada && esAjusteManual(c)).map(c => momento(c.timestamp, c.fecha_completada)),
       ]
         .filter(Boolean)
-        .sort()
-        .pop() || '';
-      return !expedientes.some(e => e.id_alumno === a.id_alumno && e.fecha_creacion.substring(0, 10) >= ultimoParte);
+        .map(t => (t.length > 10 ? new Date(t).getTime() : new Date(t + 'T00:00:00').getTime()))
+        .filter(n => !isNaN(n))
+        .sort((x, y) => x - y)
+        .pop() ?? -Infinity;
+      return !expedientes.some(e => e.id_alumno === a.id_alumno && new Date(e.fecha_creacion).getTime() >= ultimo);
     });
   }
 

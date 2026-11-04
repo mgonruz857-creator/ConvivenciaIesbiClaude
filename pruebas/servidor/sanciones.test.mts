@@ -71,6 +71,13 @@ ok('...y el alumno vuelve a aparecer en el aviso de 0 puntos', S.getAlumnosPendi
   S.recalcularPuntosAlumnos('a1');
   if (S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales>0) S.registrarAjustePuntos('a1',10,'prueba ajuste','M G',ADMIN);
   ok('ajuste manual que deja a 0 (con expediente anterior): sale en el aviso rojo', S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales===0 && S.getAlumnosPendientesDeExpediente().some((a:any)=>a.id_alumno==='a1'));
+  // expediente abierto HOY y, después, otro hecho que quita puntos el mismo día
+  const nuevo = S.crearExpediente({id_alumno:'a1',conducta_art37:1,fecha_desde:hoy,fecha_hasta:hoy,dias_acude:'',modalidad:'AULA_CONVIVENCIA',fecha_documento:hoy},ADMIN);
+  ok('tras abrir el expediente hoy, deja de salir en el aviso', !S.getAlumnosPendientesDeExpediente().some((a:any)=>a.id_alumno==='a1'));
+  S.saveExpedientes(S.getExpedientes().map((e:any)=>e.id_expediente===nuevo.id_expediente?{...e,fecha_creacion:new Date(Date.now()-60000).toISOString()}:e));
+  S.registrarAjustePuntos('a1',1,'otro hecho hoy','M G',ADMIN);
+  ok('mismo día, hecho registrado DESPUÉS del expediente: vuelve a salir', S.getAlumnosPendientesDeExpediente().some((a:any)=>a.id_alumno==='a1'));
+  S.eliminarExpediente(nuevo.id_expediente,ADMIN);
   S.saveExpedientes(S.getExpedientes().map((e:any)=>e.id_expediente===viejo.id_expediente?viejo:e));
   void al;
 }
