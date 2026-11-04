@@ -13,10 +13,10 @@ const aj=(id:string,fecha:string,p:number,extra:any={})=>({id_compensacion:id,id
 // Llega a 0 el 1/10; el 8/10 recupera 1; el 9/10 se le quita con un ajuste
 let r = calcularCarnet('a1',[parte('s1','2026-10-01',10)],[],'2026-10-09');
 ok('sin ajuste: a los 7 días recupera 1 punto', r.saldo===1);
+r = calcularCarnet('a1',[parte('s1','2026-10-01',10)],[aj('j1','2026-10-09',1)],'2026-10-14');
+ok('con ajuste el 9/10: vuelve a 0 y el 14/10 sigue a 0', r.saldo===0, String(r.saldo));
 r = calcularCarnet('a1',[parte('s1','2026-10-01',10)],[aj('j1','2026-10-09',1)],'2026-10-15');
-ok('con ajuste el 9/10: vuelve a 0 y el 15/10 sigue a 0 (contador reiniciado)', r.saldo===0, String(r.saldo));
-r = calcularCarnet('a1',[parte('s1','2026-10-01',10)],[aj('j1','2026-10-09',1)],'2026-10-16');
-ok('...y recupera 1 a los 7 días del ajuste (16/10)', r.saldo===1, String(r.saldo));
+ok('el 15/10 recupera 1 (14 días desde el parte: el ajuste no reinicia el contador)', r.saldo===1, String(r.saldo));
 ok('el ajuste no cuenta como parte', r.countSanciones===1);
 ok('ni como otra "vez a 0"', r.vecesSaldoCero===1, String(r.vecesSaldoCero));
 const mov = r.movimientos.find((m:any)=>m.tipo==='AJUSTE_MANUAL');

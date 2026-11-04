@@ -302,7 +302,7 @@ export interface Compensacion {
   /**
    * Ajuste manual de puntos (Jefatura/Convivencia, sin parte): se guarda como compensación con
    * puntos_recuperados NEGATIVO (el signo es lo que llega también al profesorado sin privilegios).
-   * Resta puntos y reinicia el contador de recuperación semanal, como un parte.
+   * Resta puntos; NO reinicia el contador de recuperación semanal (sigue contando desde el último parte).
    */
   anulada?: boolean;
   anulada_por?: string;

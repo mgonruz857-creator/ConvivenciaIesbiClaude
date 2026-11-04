@@ -1450,8 +1450,8 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                   Saldo: {ajusteModalAlumno.puntos_actuales} → <strong>{Math.max(0, ajusteModalAlumno.puntos_actuales - (Number.isFinite(puntosAjuste) ? puntosAjuste : 0))} / 10 pts</strong>
                 </div>
                 <p>
-                  No es un parte: no se imprime, no avisa al tutor/a ni cuenta como parte en las estadísticas. Igual que
-                  un parte, la recuperación semanal (+1 cada 7 días) vuelve a contar desde hoy.
+                  No es un parte: no se imprime, no avisa al tutor/a ni cuenta como parte en las estadísticas. La recuperación
+                  semanal (+1 cada 7 días) sigue contando desde el último parte, no desde hoy.
                 </p>
               </div>
 

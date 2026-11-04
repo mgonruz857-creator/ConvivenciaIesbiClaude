@@ -9,7 +9,7 @@
  *  - Parte con puntos: resta sus puntos (mínimo 0).
  *  - Medida educativa/restaurativa cumplida: suma sus puntos (máximo 10).
  *  - Ajuste manual (Jefatura/Convivencia, sin parte; compensación con puntos negativos): resta
- *    sus puntos (mínimo 0) y, como un parte, reinicia el contador de recuperación semanal.
+ *    sus puntos (mínimo 0). NO reinicia el contador de recuperación semanal (decisión de Miguel Ángel 4/11/2026).
  *    Los ajustes anulados no cuentan.
  *  - Recuperación semanal automática: cada 7 días naturales seguidos sin ningún parte que
  *    reste puntos, +1 punto (máximo 10). El contador se reinicia con cada parte que resta
@@ -184,9 +184,7 @@ export function calcularCarnet(
       const anterior = saldo;
       saldo = Math.max(0, saldo - puntos);
       totalPuntosPerdidos += anterior - saldo;
-      // Como un parte que resta puntos: la recuperación semanal vuelve a contar desde aquí
-      diaUltimoParte = Math.floor(ev.t / MIN_POR_DIA);
-      semanasAplicadas = 0;
+      // No reinicia la recuperación semanal: sigue contando desde el último parte que restó puntos
       movimientos.push({
         id_movimiento: `ajuste-${c.id_compensacion}`,
         id_compensacion: c.id_compensacion,
