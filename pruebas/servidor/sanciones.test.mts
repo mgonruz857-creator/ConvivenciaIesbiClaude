@@ -63,6 +63,17 @@ ok('ve los 2 expedientes con sus casillas', S.getExpedientes().length===2 && S.g
 S.eliminarExpediente(e2.id_expediente,ADMIN); await G.pushToGoogleDrive();
 ok('eliminar un expediente lo borra de Drive', JSON.parse(srv.archivos['DB']).expedientes_sancion.length===1);
 ok('...y el alumno vuelve a aparecer en el aviso de 0 puntos', S.getAlumnosPendientesDeExpediente().some((a:any)=>a.id_alumno==='b1'));
+{ // alumna con expediente ya abierto que vuelve a 0 por un ajuste manual de puntos (sin parte)
+  const al = S.getAlumnos().find((a:any)=>a.id_alumno==='a1');
+  const viejo = S.getExpedientes().find((e:any)=>e.id_alumno==='a1');
+  S.saveExpedientes(S.getExpedientes().map((e:any)=>e.id_expediente===viejo.id_expediente?{...e,fecha_creacion:'2026-01-10T10:00:00.000Z'}:e));
+  S.saveSanciones(S.getSanciones().map((x:any)=>x.id_alumno==='a1'?{...x,fecha:'2026-01-09'}:x));
+  S.recalcularPuntosAlumnos('a1');
+  if (S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales>0) S.registrarAjustePuntos('a1',10,'prueba ajuste','M G',ADMIN);
+  ok('ajuste manual que deja a 0 (con expediente anterior): sale en el aviso rojo', S.getAlumnos().find((a:any)=>a.id_alumno==='a1').puntos_actuales===0 && S.getAlumnosPendientesDeExpediente().some((a:any)=>a.id_alumno==='a1'));
+  S.saveExpedientes(S.getExpedientes().map((e:any)=>e.id_expediente===viejo.id_expediente?viejo:e));
+  void al;
+}
 
 console.log('== Tutora de 1º ESO A y docente sin tutoría');
 yo = await entrar(TUT,'tere2026');

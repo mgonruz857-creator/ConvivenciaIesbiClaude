@@ -144,7 +144,9 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       las casillas, para revisar los datos; y 5ª casilla «Parte de sanción guardado en Séneca». Los expedientes
       ya completados antes del cambio siguen como completados (la casilla de Séneca aparece sin marcar y se puede
       marcar); los que estén en trámite necesitan las 5. En el historial del alumno el PDF sigue apareciendo solo
-      con el expediente completado. Solo app (sin cambios en el servidor). ⏳ En PRUEBAS. Acceso directo
+      con el expediente completado. Solo app (sin cambios en el servidor). ⏳ En PRUEBAS.
+      El aviso rojo de 0 puntos tiene en cuenta también los ajustes manuales de puntos (sin parte): si un alumno con
+      expediente anterior vuelve a 0 por un ajuste, vuelve a salir (04/11/2026). Acceso directo
       desde el aviso rojo de 0 puntos ("Abrir expediente de sanción").
 - [x] **Resumen diario por correo a tutores (8:30, lunes a viernes; el del lunes recoge viernes y fin de semana)**: solo a tutores activos con partes NUEVOS en su grupo
       (número + día + grupo + enlace a la app, sin datos del alumnado); festivos entre semana: se envía igual (decisión de Miguel Ángel);

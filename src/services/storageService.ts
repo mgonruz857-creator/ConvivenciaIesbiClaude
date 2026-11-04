@@ -8,7 +8,7 @@ import { ExpedienteSancion, ClaveTramiteSancion, Alumno, Profesor, Sancion, Comp
 import { ALUMNOS_INICIALES, PROFESORES_INICIALES, SANCIONES_INICIALES, COMPENSACIONES_INICIALES, AUDIT_LOGS_INICIALES, MOVIMIENTOS_INICIALES } from '../data/seedData';
 import { ProfesorImportRow, parsearTextoOcsvProfesores } from './odsImportService';
 import { ES_ENTORNO_PRUEBAS, CUENTA_DRIVE, CARPETA_DRIVE_ID, NOMBRE_UNIDAD_DRIVE } from '../config/entorno';
-import { calcularCarnet, estadoPorSaldo, hoyLocal } from './carnetPuntos';
+import { calcularCarnet, estadoPorSaldo, hoyLocal, esAjusteManual } from './carnetPuntos';
 
 const KEY_ALUMNOS = 'sigc_bi_alumnos_v3';
 const KEY_PROFESORES = 'sigc_bi_profesores_v2';
@@ -1510,11 +1510,15 @@ export class StorageService {
   static getAlumnosPendientesDeExpediente(): Alumno[] {
     const expedientes = this.getExpedientes();
     const sanciones = this.getActiveSanciones();
+    const compensaciones = this.getCompensaciones();
     return this.getAlumnos().filter(a => {
       if (a.estado === 'BAJA' || a.puntos_actuales !== 0) return false;
-      const ultimoParte = sanciones
-        .filter(s => s.id_alumno === a.id_alumno && (s.puntos_restados || 0) > 0)
-        .map(s => s.fecha)
+      // Último hecho que quitó puntos: un parte o un ajuste manual de puntos (sin parte, no anulado)
+      const ultimoParte = [
+        ...sanciones.filter(s => s.id_alumno === a.id_alumno && (s.puntos_restados || 0) > 0).map(s => s.fecha),
+        ...compensaciones.filter(c => c.id_alumno === a.id_alumno && !c.anulada && esAjusteManual(c)).map(c => c.fecha_completada),
+      ]
+        .filter(Boolean)
         .sort()
         .pop() || '';
       return !expedientes.some(e => e.id_alumno === a.id_alumno && e.fecha_creacion.substring(0, 10) >= ultimoParte);
