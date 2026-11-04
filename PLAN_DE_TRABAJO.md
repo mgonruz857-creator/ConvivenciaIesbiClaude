@@ -166,6 +166,12 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       inicial» (ventana de Drive) y «Vaciar Censo» (Carnet de Puntos). Se mantiene solo la opción de vaciar alumnos dentro de
       «Abrir nuevo curso escolar». Antes de importar, la app pide confirmación con el nº de alumnos/docentes que se van a importar.
       ✅ En PRUEBAS y EN PRODUCCIÓN desde el 31/10/2026 (no toca el servidor).
+- [x] **Dos conductas de móvil** (petición de Miguel Ángel 4/11/2026): A = «Uso no autorizado del móvil, que entrega y
+      guarda cuando se solicita» (código `GRA-MOVIL-USO`, −8, igual que antes) y B = «Uso no autorizado del móvil, que NO
+      entrega o guarda cuando se solicita» (código `GRA-MOVIL-ENTREGA`, antes «Negativa a guardar/entregar el móvil», pasa de
+      −5 a −10). Se mantienen los códigos: los partes ya puestos conservan sus puntos (van guardados en cada parte) y se
+      muestran con el nombre nuevo. Puntos de B pendientes de confirmar por Miguel Ángel. No toca el servidor.
+      ✅ En PRUEBAS desde el 4/11/2026.
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
