@@ -34,6 +34,7 @@ import { Sancion, Alumno, Profesor, EstadoTramitacion, CodigoInfraccionROF, LIST
 import { MATRIZ_ROF_CATALOG } from '../data/rofCatalog';
 import { AuthService } from '../services/authService';
 import { EditarParteModal } from './EditarParteModal';
+import { PartesPorDocentePanel, claveDocente } from './PartesPorDocentePanel';
 
 interface DailyFeedViewProps {
   sanciones: Sancion[];
@@ -78,6 +79,7 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
   const [filterGrupo, setFilterGrupo] = useState<string>('TODOS');
   const [filterEstado, setFilterEstado] = useState<string>('TODOS');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterDocente, setFilterDocente] = useState<{ clave: string; nombre: string } | null>(null);
 
   // Active KPI Detail Modal
   const [activeKpiModal, setActiveKpiModal] = useState<FeedDetailModalType>(null);
@@ -163,6 +165,9 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
       // Grupo filter
       if (filterGrupo !== 'TODOS' && alumno.grupo !== filterGrupo) return false;
 
+      // Docente filter (desde «Partes por docente»)
+      if (filterDocente && claveDocente(s) !== filterDocente.clave) return false;
+
       // Estado filter
       if (filterEstado !== 'TODOS' && s.estado_tramitacion !== filterEstado) return false;
 
@@ -185,7 +190,7 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
 
       return true;
     });
-  }, [sanciones, filterDate, filterGrupo, filterEstado, searchTerm, alumnoMap]);
+  }, [sanciones, filterDate, filterGrupo, filterEstado, filterDocente, searchTerm, alumnoMap]);
 
   // Statistics for the selected day
   const statsDay = useMemo(() => {
@@ -448,6 +453,14 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
         </div>
       </div>
 
+      {/* Recuento de partes por docente */}
+      <PartesPorDocentePanel
+        sanciones={sanciones}
+        profesores={profesores}
+        docenteSeleccionado={filterDocente?.clave || ''}
+        onSeleccionarDocente={(clave, nombre) => setFilterDocente(clave ? { clave, nombre } : null)}
+      />
+
       {/* Filter and Search Bar */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs flex-1">
@@ -514,6 +527,18 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
             <option value="PARTE_IMPRESO">Parte Impreso</option>
             <option value="RESUELTO">Resueltos</option>
           </select>
+
+          {filterDocente && (
+            <button
+              type="button"
+              onClick={() => setFilterDocente(null)}
+              className="inline-flex items-center gap-1 bg-sky-100 border border-sky-300 text-sky-900 px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-sky-200"
+              title="Quitar el filtro de docente"
+            >
+              Docente: {filterDocente.nombre}
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Search input */}
