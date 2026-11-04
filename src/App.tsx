@@ -711,6 +711,7 @@ export default function App() {
             alumnos={alumnos}
             sanciones={sanciones}
             expedientes={expedientes}
+            compensaciones={compensaciones}
             nuevosIds={nuevosAlAbrirTutoria}
             onPrintParte={(sancion) => setPrintableParte(sancion)}
           />

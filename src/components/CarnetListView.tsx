@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { hoyLocal } from '../services/carnetPuntos';
+import { hoyLocal, historicoSancionesPorAlumno, historicoDe } from '../services/carnetPuntos';
 import { 
   Search, 
   PlusCircle, 
@@ -77,6 +77,7 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   alumnos,
   sanciones,
   profesores = [],
+  compensaciones = [],
   expedientes = [],
   onAbrirExpediente,
   currentUser,
@@ -169,6 +170,12 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   const todayStr = hoyLocal();
 
   // Conteo de activos y bajas
+  // Histórico de sanciones de cada alumno: nº de expedientes de sanción y veces que se ha quedado a 0 puntos
+  const historicoSanciones = useMemo(
+    () => historicoSancionesPorAlumno(sanciones, compensaciones, expedientes),
+    [sanciones, compensaciones, expedientes]
+  );
+
   const countActivos = useMemo(() => alumnos.filter(a => a.estado !== 'BAJA').length, [alumnos]);
   const countBajas = useMemo(() => alumnos.filter(a => a.estado === 'BAJA').length, [alumnos]);
 
@@ -718,6 +725,17 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                   <div className="pt-2">
                     {renderCarnetDots(alumno.puntos_actuales)}
                   </div>
+
+                  {/* Histórico de sanciones */}
+                  {(() => {
+                    const h = historicoDe(historicoSanciones, alumno.id_alumno);
+                    const hay = h.sanciones > 0 || h.vecesSaldoCero > 0;
+                    return (
+                      <div className={`mt-2 text-[11px] ${hay ? 'text-rose-800 font-semibold' : 'text-slate-400'}`}>
+                        Sancionado/a: {h.sanciones} {h.sanciones === 1 ? 'vez' : 'veces'} · A 0 puntos: {h.vecesSaldoCero} {h.vecesSaldoCero === 1 ? 'vez' : 'veces'}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Acciones y enlace a Ficha Completa */}
@@ -870,6 +888,23 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                 {renderCarnetDots(historyModalAlumno.puntos_actuales)}
               </div>
             </div>
+
+            {/* Histórico de sanciones: nº de expedientes y veces a 0 puntos */}
+            {(() => {
+              const h = historicoDe(historicoSanciones, historyModalAlumno.id_alumno);
+              return (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className={`px-3 py-2 rounded-xl border ${h.sanciones ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className={`text-lg font-bold font-mono ${h.sanciones ? 'text-rose-800' : 'text-slate-700'}`}>{h.sanciones}</div>
+                    <div className="text-[11px] text-slate-600">{h.sanciones === 1 ? 'vez sancionado/a' : 'veces sancionado/a'} (expedientes de sanción)</div>
+                  </div>
+                  <div className={`px-3 py-2 rounded-xl border ${h.vecesSaldoCero ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className={`text-lg font-bold font-mono ${h.vecesSaldoCero ? 'text-rose-800' : 'text-slate-700'}`}>{h.vecesSaldoCero}</div>
+                    <div className="text-[11px] text-slate-600">{h.vecesSaldoCero === 1 ? 'vez' : 'veces'} a 0 puntos</div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Partes Disciplinarios Activos del Alumno */}
             {(() => {

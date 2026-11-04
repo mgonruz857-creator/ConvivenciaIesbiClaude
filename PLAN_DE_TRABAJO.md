@@ -175,7 +175,7 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       entrega o guarda cuando se solicita» (código `GRA-MOVIL-ENTREGA`, antes «Negativa a guardar/entregar el móvil», pasa de
       −5 a −10). Se mantienen los códigos: los partes ya puestos conservan sus puntos (van guardados en cada parte) y se
       muestran con el nombre nuevo. Puntos confirmados por Miguel Ángel (4/11). No toca el servidor.
-      ✅ En PRUEBAS desde el 4/11/2026.
+      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
 - [x] **«Guardia» como lugar del hecho** (petición de Miguel Ángel 04/11/2026, para tener estadísticas de las incidencias
       en guardias): nueva opción «Guardia – Servicio de guardia» en el paso 3 del parte y al editar un parte; aparece en
       Estadísticas (distribución por lugar, barra en rojo) y en el informe PDF (sección 5, ahora con 7 lugares). Los partes
@@ -186,6 +186,13 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       «Ver los N docentes»; botón CSV. Al pulsar un docente, la lista de partes de abajo se filtra por él (etiqueta «Docente: …»
       para quitarlo). Solo lo ven quienes tienen acceso al Feed (Jefatura/Convivencia). Solo cuenta docentes con algún parte.
       No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
+- [x] **Histórico de sanciones por alumno** (petición de Miguel Ángel 4/11/2026): en cada alumno se ve cuántas veces ha
+      sido sancionado/a (nº de expedientes de sanción) y cuántas veces se ha quedado a 0 puntos (cada vez que el saldo pasa
+      de más de 0 a 0; recibir otro parte estando ya a 0 no cuenta). Aparece en la tarjeta del Carnet de Puntos, en «Ver
+      Historial» y en la tabla de Mi Tutoría (columnas «Sanciones» y «Veces a 0»). Se calcula en la app con los datos que ya
+      hay (`historicoSancionesPorAlumno` en `carnetPuntos.ts`); vale también para cualquier movimiento futuro que deje el
+      saldo en 0 (p. ej. un ajuste manual). No toca el servidor.
+      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.

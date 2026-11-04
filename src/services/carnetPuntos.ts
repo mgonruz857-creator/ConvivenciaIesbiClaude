@@ -13,7 +13,7 @@
  *    puntos; los registros de 0 puntos no lo interrumpen. Se aplica al empezar el día 7.
  */
 
-import { Sancion, Compensacion, MovimientoPuntos } from '../types/convivencia';
+import { Sancion, Compensacion, MovimientoPuntos, ExpedienteSancion } from '../types/convivencia';
 
 export const SALDO_INICIAL = 10;
 export const SALDO_MAXIMO = 10;
@@ -27,6 +27,8 @@ export interface ResultadoCarnet {
   totalPuntosRecuperados: number;
   /** Número de partes del alumno (incluye registros de 0 puntos). */
   countSanciones: number;
+  /** Veces que el saldo ha pasado de más de 0 a 0 puntos (estar ya a 0 y recibir otro parte no cuenta). */
+  vecesSaldoCero: number;
   /** Histórico de movimientos, del más reciente al más antiguo. */
   movimientos: MovimientoPuntos[];
   /** Saldo justo antes y justo después de cada parte. */
@@ -203,9 +205,74 @@ export function calcularCarnet(
     totalPuntosPerdidos,
     totalPuntosRecuperados,
     countSanciones,
+    vecesSaldoCero: contarVecesSaldoCero(movimientos),
     movimientos: movimientos.reverse(),
     saldosPorSancion,
   };
+}
+
+/**
+ * Veces que el saldo ha llegado a 0: movimientos que lo dejan en 0 viniendo de más de 0.
+ * Sirve para cualquier tipo de movimiento (partes, ajustes…).
+ */
+export function contarVecesSaldoCero(movimientos: MovimientoPuntos[]): number {
+  return movimientos.filter((m) => Number(m.saldo_anterior) > 0 && Number(m.saldo_resultante) === 0).length;
+}
+
+export interface HistoricoSancionesAlumno {
+  /** Expedientes de sanción abiertos al alumno. */
+  sanciones: number;
+  /** Veces que se ha quedado a 0 puntos. */
+  vecesSaldoCero: number;
+}
+
+const claveAlumno = (id?: string) => (id || '').toLowerCase().trim();
+
+/**
+ * Histórico de sanciones de cada alumno: nº de expedientes de sanción y nº de veces a 0 puntos.
+ * Agrupa primero por alumno para no repasar todos los partes una vez por alumno.
+ * Para consultar, usar `historicoDe(mapa, idAlumno)`.
+ */
+export function historicoSancionesPorAlumno(
+  sanciones: Sancion[],
+  compensaciones: Compensacion[],
+  expedientes: ExpedienteSancion[],
+  hasta: string = hoyLocal()
+): Map<string, HistoricoSancionesAlumno> {
+  const partes = new Map<string, Sancion[]>();
+  const medidas = new Map<string, Compensacion[]>();
+  const ids = new Map<string, string>();
+  for (const s of sanciones) {
+    if (!s || !s.id_sancion) continue;
+    const k = claveAlumno(s.id_alumno);
+    if (!k) continue;
+    (partes.get(k) || partes.set(k, []).get(k)!).push(s);
+    if (!ids.has(k)) ids.set(k, s.id_alumno);
+  }
+  for (const c of compensaciones) {
+    if (!c || !c.id_compensacion) continue;
+    const k = claveAlumno(c.id_alumno);
+    if (!k) continue;
+    (medidas.get(k) || medidas.set(k, []).get(k)!).push(c);
+  }
+  const resultado = new Map<string, HistoricoSancionesAlumno>();
+  for (const [k, ps] of partes) {
+    const r = calcularCarnet(ids.get(k) || k, ps, medidas.get(k) || [], hasta);
+    if (r.vecesSaldoCero > 0) resultado.set(k, { sanciones: 0, vecesSaldoCero: r.vecesSaldoCero });
+  }
+  for (const e of expedientes) {
+    if (!e || !e.id_expediente) continue;
+    const k = claveAlumno(e.id_alumno);
+    if (!k) continue;
+    const h = resultado.get(k) || { sanciones: 0, vecesSaldoCero: 0 };
+    h.sanciones++;
+    resultado.set(k, h);
+  }
+  return resultado;
+}
+
+export function historicoDe(mapa: Map<string, HistoricoSancionesAlumno>, idAlumno: string): HistoricoSancionesAlumno {
+  return mapa.get(claveAlumno(idAlumno)) || { sanciones: 0, vecesSaldoCero: 0 };
 }
 
 export function estadoPorSaldo(saldo: number): 'ACTIVO' | 'ALERTA_PUNTOS' | 'SALDO_CERO' {

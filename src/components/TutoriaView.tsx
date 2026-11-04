@@ -5,9 +5,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { Users, Phone, Printer, ChevronDown, ChevronUp, AlertTriangle, School } from 'lucide-react';
-import { Alumno, ExpedienteSancion, Profesor, Sancion, LISTA_GRUPOS_OFICIALES } from '../types/convivencia';
+import { Alumno, Compensacion, ExpedienteSancion, Profesor, Sancion, LISTA_GRUPOS_OFICIALES } from '../types/convivencia';
 import { TRAMITES_SANCION, MODALIDADES_SANCION, textoConductaArt37 } from '../data/sancionesArt37';
 import { fechaLarga } from '../utils/parteSancionPdf';
+import { historicoSancionesPorAlumno, historicoDe } from '../services/carnetPuntos';
 import { CATALOGO_CONDUCTAS_V0, MATRIZ_ROF_CATALOG } from '../data/rofCatalog';
 
 interface TutoriaViewProps {
@@ -15,6 +16,7 @@ interface TutoriaViewProps {
   alumnos: Alumno[];
   sanciones: Sancion[];
   expedientes?: ExpedienteSancion[];
+  compensaciones?: Compensacion[];
   /** Partes que eran nuevos al entrar (se marcan con «Nuevo») */
   nuevosIds?: Set<string>;
   onPrintParte: (sancion: Sancion) => void;
@@ -51,7 +53,7 @@ function fechaLegible(f: string): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : f;
 }
 
-export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, sanciones, expedientes = [], nuevosIds, onPrintParte }) => {
+export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, sanciones, expedientes = [], compensaciones = [], nuevosIds, onPrintParte }) => {
   const grupo = currentUser.tutor_de_grupo || '';
   const etiquetaGrupo = LISTA_GRUPOS_OFICIALES.find((g) => g.codigo === grupo)?.etiqueta || grupo;
   const [alumnoFiltro, setAlumnoFiltro] = useState<string>('');
@@ -83,6 +85,17 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
   const expedientesGrupo = useMemo(
     () => expedientes.filter((e) => idsGrupo.has(e.id_alumno)).sort((a, b) => b.fecha_creacion.localeCompare(a.fecha_creacion)),
     [expedientes, idsGrupo]
+  );
+
+  // Veces sancionado/a (expedientes) y veces a 0 puntos de cada alumno del grupo
+  const historicoSanciones = useMemo(
+    () =>
+      historicoSancionesPorAlumno(
+        partesGrupo,
+        compensaciones.filter((c) => idsGrupo.has(c.id_alumno)),
+        expedientesGrupo
+      ),
+    [partesGrupo, compensaciones, idsGrupo, expedientesGrupo]
   );
 
   const partesVisibles = alumnoFiltro ? partesGrupo.filter((s) => s.id_alumno === alumnoFiltro) : partesGrupo;
@@ -187,6 +200,8 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
                   <th className="text-left p-3">Alumno/a</th>
                   <th className="text-center p-3">Puntos</th>
                   <th className="text-center p-3">Partes</th>
+                  <th className="text-center p-3" title="Expedientes de sanción">Sanciones</th>
+                  <th className="text-center p-3">Veces a 0</th>
                   <th className="text-left p-3">Familia</th>
                   <th className="p-3"></th>
                 </tr>
@@ -203,6 +218,15 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
                         <span className={`inline-block min-w-8 px-2 py-0.5 rounded-lg font-bold ${colorSaldo(a.puntos_actuales)}`}>{a.puntos_actuales}</span>
                       </td>
                       <td className="p-3 text-center font-semibold text-slate-700">{n}</td>
+                      {(() => {
+                        const h = historicoDe(historicoSanciones, a.id_alumno);
+                        return (
+                          <>
+                            <td className={`p-3 text-center font-semibold ${h.sanciones ? 'text-rose-700' : 'text-slate-400'}`}>{h.sanciones}</td>
+                            <td className={`p-3 text-center font-semibold ${h.vecesSaldoCero ? 'text-rose-700' : 'text-slate-400'}`}>{h.vecesSaldoCero}</td>
+                          </>
+                        );
+                      })()}
                       <td className="p-3 text-slate-700">
                         {telValido ? (
                           <a href={`tel:${tel.replace(/\s/g, '')}`} className="inline-flex items-center gap-1 text-sky-700 hover:underline">
