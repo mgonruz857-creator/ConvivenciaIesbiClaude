@@ -191,7 +191,9 @@ export interface MovimientoPuntos {
   id_movimiento: string;
   id_alumno: string;
   fecha: string;
-  tipo: 'PARTE' | 'RECUPERACION_SEMANAL' | 'MEDIDA_RESTAURATIVA' | 'ANULACION_PARTE' | 'COMPENSACION';
+  tipo: 'PARTE' | 'RECUPERACION_SEMANAL' | 'MEDIDA_RESTAURATIVA' | 'ANULACION_PARTE' | 'COMPENSACION' | 'AJUSTE_MANUAL';
+  /** Solo en ajustes manuales: id de la compensación que lo guarda (para poder anularlo). */
+  id_compensacion?: string;
   conducta_titulo?: string;
   puntos: number; // e.g. -2, -3, +1, +2
   profesor_nombre: string;
@@ -293,9 +295,21 @@ export interface Compensacion {
     | 'Reparación de desperfectos materiales'
     | 'Servicio de apoyo en Biblioteca escolar'
     | 'Taller de resolución pacífica y mediación'
-    | 'Ayuda lectiva a compañeros';
+    | 'Ayuda lectiva a compañeros'
+    | 'Ajuste manual de puntos';
   descripcion_tarea: string;
   fecha_completada: string;
+  /**
+   * Ajuste manual de puntos (Jefatura/Convivencia, sin parte): se guarda como compensación con
+   * puntos_recuperados NEGATIVO (el signo es lo que llega también al profesorado sin privilegios).
+   * Resta puntos y reinicia el contador de recuperación semanal, como un parte.
+   */
+  anulada?: boolean;
+  anulada_por?: string;
+  fecha_anulacion?: string;
+  motivo_anulacion?: string;
+  /** Puntos que tenía el ajuste antes de anularse (al anularlo, puntos_recuperados pasa a 0). */
+  puntos_ajuste_original?: number;
 }
 
 /** Trámite de un expediente de sanción: quién lo marcó y cuándo. */
@@ -332,7 +346,7 @@ export interface AuditLog {
   id_log: string;
   timestamp: string;
   usuario_email: string;
-  accion: 'CREAR_PARTE' | 'MODIFICAR_PARTE' | 'ACTUALIZAR_TRAMITACION' | 'COMPENSAR_PUNTOS' | 'RECEPCION_PAC' | 'IMPORTACION_MASIVA' | 'ACTUALIZACION_SISTEMA' | 'ELIMINAR_PARTE';
+  accion: 'CREAR_PARTE' | 'MODIFICAR_PARTE' | 'ACTUALIZAR_TRAMITACION' | 'COMPENSAR_PUNTOS' | 'RECEPCION_PAC' | 'IMPORTACION_MASIVA' | 'ACTUALIZACION_SISTEMA' | 'ELIMINAR_PARTE' | 'AJUSTE_PUNTOS' | 'ANULAR_AJUSTE_PUNTOS';
   entidad: string;
   detalles: string;
   hash_integridad: string;

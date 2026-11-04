@@ -8,6 +8,9 @@
  *  - Saldo inicial: 10 puntos.
  *  - Parte con puntos: resta sus puntos (mínimo 0).
  *  - Medida educativa/restaurativa cumplida: suma sus puntos (máximo 10).
+ *  - Ajuste manual (Jefatura/Convivencia, sin parte; compensación con puntos negativos): resta
+ *    sus puntos (mínimo 0) y, como un parte, reinicia el contador de recuperación semanal.
+ *    Los ajustes anulados no cuentan.
  *  - Recuperación semanal automática: cada 7 días naturales seguidos sin ningún parte que
  *    reste puntos, +1 punto (máximo 10). El contador se reinicia con cada parte que resta
  *    puntos; los registros de 0 puntos no lo interrumpen. Se aplica al empezar el día 7.
@@ -95,7 +98,8 @@ export function calcularCarnet(
   }
 
   for (const c of compensaciones) {
-    if (!c || !c.id_compensacion || !mismoAlumno(c.id_alumno, idAlumno)) continue;
+    if (!c || !c.id_compensacion || !mismoAlumno(c.id_alumno, idAlumno) || c.anulada) continue;
+    if (!(Number(c.puntos_recuperados) || 0)) continue; // 0 puntos (p. ej. ajuste anulado): no cuenta
     const dia = diaDeFecha(c.fecha_completada) || diaDeFecha(c.timestamp);
     if (isNaN(dia)) continue;
     // Hora local (la de los partes también es hora local), no la hora UTC del timestamp
@@ -174,6 +178,28 @@ export function calcularCarnet(
         saldo_resultante: saldo,
         detalles: s.descripcion_hechos,
       });
+    } else if (ev.tipo === 'MEDIDA' && ev.compensacion && esAjusteManual(ev.compensacion)) {
+      const c = ev.compensacion;
+      const puntos = Math.abs(Number(c.puntos_recuperados) || 0);
+      const anterior = saldo;
+      saldo = Math.max(0, saldo - puntos);
+      totalPuntosPerdidos += anterior - saldo;
+      // Como un parte que resta puntos: la recuperación semanal vuelve a contar desde aquí
+      diaUltimoParte = Math.floor(ev.t / MIN_POR_DIA);
+      semanasAplicadas = 0;
+      movimientos.push({
+        id_movimiento: `ajuste-${c.id_compensacion}`,
+        id_compensacion: c.id_compensacion,
+        id_alumno: idAlumno,
+        fecha: (c.fecha_completada || c.timestamp || '').split('T')[0],
+        tipo: 'AJUSTE_MANUAL',
+        conducta_titulo: 'Ajuste manual de puntos (sin parte)',
+        puntos: -puntos,
+        profesor_nombre: c.nombre_profesor_autoriza || 'Jefatura / Convivencia',
+        saldo_anterior: anterior,
+        saldo_resultante: saldo,
+        detalles: c.descripcion_tarea,
+      });
     } else if (ev.tipo === 'MEDIDA' && ev.compensacion) {
       const c = ev.compensacion;
       const puntos = Math.max(0, Number(c.puntos_recuperados) || 0);
@@ -213,10 +239,11 @@ export function calcularCarnet(
 
 /**
  * Veces que el saldo ha llegado a 0: movimientos que lo dejan en 0 viniendo de más de 0.
- * Sirve para cualquier tipo de movimiento (partes, ajustes…).
+ * Los ajustes manuales («Quitar puntos sin parte») no cuentan: sirven para mantener a 0 a quien
+ * recuperó un punto por la regla semanal mientras se tramita su sanción (es la misma vez a 0).
  */
 export function contarVecesSaldoCero(movimientos: MovimientoPuntos[]): number {
-  return movimientos.filter((m) => Number(m.saldo_anterior) > 0 && Number(m.saldo_resultante) === 0).length;
+  return movimientos.filter((m) => m.tipo !== 'AJUSTE_MANUAL' && Number(m.saldo_anterior) > 0 && Number(m.saldo_resultante) === 0).length;
 }
 
 export interface HistoricoSancionesAlumno {
@@ -273,6 +300,11 @@ export function historicoSancionesPorAlumno(
 
 export function historicoDe(mapa: Map<string, HistoricoSancionesAlumno>, idAlumno: string): HistoricoSancionesAlumno {
   return mapa.get(claveAlumno(idAlumno)) || { sanciones: 0, vecesSaldoCero: 0 };
+}
+
+/** Un ajuste manual se guarda como compensación con puntos negativos. */
+export function esAjusteManual(c?: Compensacion | null): boolean {
+  return !!c && (Number(c.puntos_recuperados) || 0) < 0;
 }
 
 export function estadoPorSaldo(saldo: number): 'ACTIVO' | 'ALERTA_PUNTOS' | 'SALDO_CERO' {

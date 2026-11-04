@@ -123,6 +123,15 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   const [puntosMedida, setPuntosMedida] = useState<number>(2);
   const [descripcionMedida, setDescripcionMedida] = useState<string>('');
 
+  // Ajuste manual de puntos (quitar puntos sin parte; Jefatura/Convivencia)
+  const [ajusteModalAlumno, setAjusteModalAlumno] = useState<Alumno | null>(null);
+  const [puntosAjuste, setPuntosAjuste] = useState<number>(1);
+  const [motivoAjuste, setMotivoAjuste] = useState<string>('');
+  const [ajusteError, setAjusteError] = useState<string | null>(null);
+  const [ajusteAAnular, setAjusteAAnular] = useState<MovimientoPuntos | null>(null);
+  const [motivoAnulacion, setMotivoAnulacion] = useState<string>('');
+  const [versionMovimientos, setVersionMovimientos] = useState(0);
+
   // Modal para Dar de Baja a un Alumno/a
   const [alumnoABajar, setAlumnoABajar] = useState<Alumno | null>(null);
   const [motivoBajaAlumnoInput, setMotivoBajaAlumnoInput] = useState<string>('Traslado a otro centro educativo');
@@ -380,6 +389,49 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
     }
   };
 
+  const abrirAjuste = (alumno: Alumno) => {
+    setAjusteModalAlumno(alumno);
+    setPuntosAjuste(Math.max(1, alumno.puntos_actuales));
+    setMotivoAjuste('');
+    setAjusteError(null);
+  };
+
+  // Confirmar ajuste manual (quitar puntos sin parte)
+  const handleConfirmAjuste = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ajusteModalAlumno) return;
+    if (!Number.isInteger(puntosAjuste) || puntosAjuste < 1 || puntosAjuste > ajusteModalAlumno.puntos_actuales) return;
+    if (!motivoAjuste.trim()) { setAjusteError('Indica el motivo del ajuste.'); return; }
+    try {
+      StorageService.registrarAjustePuntos(
+        ajusteModalAlumno.id_alumno,
+        puntosAjuste,
+        motivoAjuste,
+        `${currentUser.nombre} ${currentUser.apellidos}`,
+        currentUser.email
+      );
+      setAjusteModalAlumno(null);
+      setMotivoAjuste('');
+      setVersionMovimientos(v => v + 1);
+      if (onDataChanged) onDataChanged();
+    } catch (err: any) {
+      setAjusteError(err?.message || 'No se pudo registrar el ajuste.');
+    }
+  };
+
+  const handleConfirmAnularAjuste = () => {
+    if (!ajusteAAnular?.id_compensacion) return;
+    try {
+      StorageService.anularAjustePuntos(ajusteAAnular.id_compensacion, motivoAnulacion, currentUser.email);
+      setAjusteAAnular(null);
+      setMotivoAnulacion('');
+      setVersionMovimientos(v => v + 1);
+      if (onDataChanged) onDataChanged();
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
   // Renderizar los 10 puntos discretos del carnet
   const renderCarnetDots = (puntos: number) => {
     return (
@@ -414,7 +466,7 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   const modalMovimientos = useMemo(() => {
     if (!historyModalAlumno) return [];
     return StorageService.getMovimientosPorAlumno(historyModalAlumno.id_alumno);
-  }, [historyModalAlumno, sanciones]);
+  }, [historyModalAlumno, sanciones, versionMovimientos]);
 
   return (
     <div className="space-y-6">
@@ -776,6 +828,17 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                           </button>
                         )}
 
+                        {isAdmin && alumno.puntos_actuales > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => abrirAjuste(alumno)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                            title="Quitar puntos sin poner un parte (ajuste manual, queda registrado)"
+                          >
+                            − Quitar puntos
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => onSelectAlumnoForParte(alumno.id_alumno)}
@@ -1092,6 +1155,16 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                           <div className="text-[10px] font-mono text-slate-500 mt-1">
                             Saldo: {mov.saldo_anterior} → <strong>{mov.saldo_resultante}</strong>
                           </div>
+                          {isAdmin && mov.tipo === 'AJUSTE_MANUAL' && mov.id_compensacion && (
+                            <button
+                              type="button"
+                              onClick={() => { setAjusteAAnular(mov); setMotivoAnulacion(''); }}
+                              className="mt-1 text-[10px] text-rose-700 underline hover:text-rose-900 cursor-pointer"
+                              title="Anular este ajuste (por error); queda registrado"
+                            >
+                              Anular ajuste
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -1128,6 +1201,17 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                         className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-xl text-xs font-semibold cursor-pointer"
                       >
                         Registrar Medida Educativa (+X pts)
+                      </button>
+                    )}
+
+                    {isAdmin && historyModalAlumno.puntos_actuales > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => abrirAjuste(historyModalAlumno)}
+                        className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-xl text-xs font-semibold cursor-pointer"
+                        title="Quitar puntos sin poner un parte (ajuste manual, queda registrado)"
+                      >
+                        Quitar puntos sin parte (−X pts)
                       </button>
                     )}
 
@@ -1288,6 +1372,143 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA AJUSTE MANUAL DE PUNTOS (quitar puntos sin parte) */}
+      {ajusteModalAlumno && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-rose-100 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-rose-100 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Quitar puntos sin parte (ajuste manual)</h2>
+                <p className="text-xs text-slate-500 font-mono">
+                  {ajusteModalAlumno.nombre} {ajusteModalAlumno.apellidos} ({ajusteModalAlumno.grupo})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAjusteModalAlumno(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmAjuste} className="space-y-4 text-xs">
+              <div>
+                <label htmlFor="puntos-ajuste" className="block font-semibold text-slate-700 mb-1">
+                  Puntos a quitar (de 1 a {ajusteModalAlumno.puntos_actuales}):
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    id="puntos-ajuste"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={ajusteModalAlumno.puntos_actuales}
+                    step={1}
+                    required
+                    autoFocus
+                    value={Number.isFinite(puntosAjuste) && puntosAjuste > 0 ? puntosAjuste : ''}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      setPuntosAjuste(Number.isFinite(v) ? Math.max(1, Math.min(ajusteModalAlumno.puntos_actuales, v)) : NaN);
+                    }}
+                    className="w-24 rounded-xl border border-slate-300 px-3 py-2 text-base font-mono font-bold text-center bg-white focus:border-rose-600 focus:ring-1 focus:ring-rose-600"
+                  />
+                  <span className="text-slate-500">puntos</span>
+                  <button
+                    type="button"
+                    onClick={() => setPuntosAjuste(ajusteModalAlumno.puntos_actuales)}
+                    className="ml-auto px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+                    title="Quitar todos los puntos que tiene ahora"
+                  >
+                    Dejar en 0 (−{ajusteModalAlumno.puntos_actuales})
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="motivo-ajuste" className="block font-semibold text-slate-700 mb-1">
+                  Motivo (obligatorio, queda registrado):
+                </label>
+                <textarea
+                  id="motivo-ajuste"
+                  rows={3}
+                  value={motivoAjuste}
+                  onChange={(e) => { setMotivoAjuste(e.target.value); setAjusteError(null); }}
+                  placeholder="Ej: Estaba a 0 puntos pendiente de sanción y ha recuperado 1 punto por la regla semanal"
+                  className="w-full rounded-xl border border-slate-300 p-2 bg-slate-50 text-xs focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="bg-rose-50 p-3 rounded-xl text-[11px] text-rose-950 space-y-1">
+                <div className="font-mono">
+                  Saldo: {ajusteModalAlumno.puntos_actuales} → <strong>{Math.max(0, ajusteModalAlumno.puntos_actuales - (Number.isFinite(puntosAjuste) ? puntosAjuste : 0))} / 10 pts</strong>
+                </div>
+                <p>
+                  No es un parte: no se imprime, no avisa al tutor/a ni cuenta como parte en las estadísticas. Igual que
+                  un parte, la recuperación semanal (+1 cada 7 días) vuelve a contar desde hoy.
+                </p>
+              </div>
+
+              {ajusteError && <p className="text-[11px] text-rose-700 font-semibold">{ajusteError}</p>}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAjusteModalAlumno(null)}
+                  className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl shadow-xs cursor-pointer hover:bg-rose-700"
+                >
+                  Quitar puntos
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMAR ANULACIÓN DE UN AJUSTE MANUAL */}
+      {ajusteAAnular && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 border border-rose-100 space-y-3 text-xs">
+            <h2 className="text-sm font-bold text-slate-900">¿Anular este ajuste de puntos?</h2>
+            <p className="text-slate-600">
+              Ajuste del {ajusteAAnular.fecha} ({ajusteAAnular.puntos} pts) registrado por {ajusteAAnular.profesor_nombre}.
+              El alumno/a recuperará esos puntos y el ajuste dejará de contar. La anulación queda registrada.
+            </p>
+            <textarea
+              rows={2}
+              value={motivoAnulacion}
+              onChange={(e) => setMotivoAnulacion(e.target.value)}
+              placeholder="Motivo de la anulación (ej: alumno equivocado)"
+              className="w-full rounded-xl border border-slate-300 p-2 bg-slate-50 text-xs focus:bg-white"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAjusteAAnular(null)}
+                className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAnularAjuste}
+                className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl cursor-pointer hover:bg-rose-700"
+              >
+                Anular ajuste
+              </button>
+            </div>
           </div>
         </div>
       )}

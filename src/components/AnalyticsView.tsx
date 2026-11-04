@@ -199,7 +199,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   const calculateYearStats = (sancionesList: Sancion[], compensacionesList: Compensacion[]) => {
     const totalPartes = sancionesList.length;
     const totalPuntosPerdidos = sancionesList.reduce((acc, s) => acc + s.puntos_restados, 0);
-    const puntosRestituidos = compensacionesList.reduce((acc, c) => acc + c.puntos_recuperados, 0);
+    const puntosRestituidos = compensacionesList.reduce((acc, c) => acc + Math.max(0, Number(c.puntos_recuperados) || 0), 0);
     const pacDerivados = sancionesList.filter(s => s.derivado_pac).length;
     const pacCompletados = sancionesList.filter(s => s.derivado_pac && s.estado_pac === 'TAREAS_COMPLETADAS').length;
     const pacTasaComparecencia = pacDerivados > 0 ? Math.round((pacCompletados / pacDerivados) * 100) : 100;

@@ -2120,6 +2120,87 @@ export class StorageService {
   }
 
   /**
+   * Ajuste manual de puntos (Jefatura/Convivencia): quita puntos sin tramitar un parte.
+   * Se guarda como compensación con puntos negativos (viaja a Drive y llega a todos los dispositivos).
+   * Reinicia el contador de recuperación semanal, igual que un parte que resta puntos.
+   */
+  static registrarAjustePuntos(
+    idAlumno: string,
+    puntosQuitar: number,
+    motivo: string,
+    profesorNombre: string,
+    usuarioEmail: string
+  ): { alumnoActualizado: Alumno; nuevoSaldo: number; compensacion: Compensacion } {
+    const alumno = this.getAlumnos().find(a => a.id_alumno === idAlumno);
+    if (!alumno) throw new Error(`Alumno no encontrado: ${idAlumno}`);
+    const texto = (motivo || '').trim();
+    if (!texto) throw new Error('Hay que indicar el motivo del ajuste.');
+
+    const saldoAnterior = this.calcularSaldoAlumno(idAlumno).saldoActual;
+    const puntos = Math.max(1, Math.min(10, Math.round(puntosQuitar) || 1));
+
+    const compensacion: Compensacion = {
+      id_compensacion: `aju-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      id_alumno: idAlumno,
+      id_profesor_autoriza: usuarioEmail,
+      nombre_profesor_autoriza: profesorNombre,
+      puntos_recuperados: -puntos,
+      tipo_tarea: 'Ajuste manual de puntos',
+      descripcion_tarea: texto,
+      fecha_completada: hoyLocal(),
+    };
+    this.saveCompensaciones([...this.getCompensaciones(), compensacion]);
+    this.addPendingSyncCompensacionId(compensacion.id_compensacion);
+
+    const alumnoActualizado = this.recalcularPuntosAlumnos(idAlumno).find(a => a.id_alumno === idAlumno) || alumno;
+    const nuevoSaldo = alumnoActualizado.puntos_actuales;
+
+    this.addAuditLog(
+      usuarioEmail,
+      'AJUSTE_PUNTOS',
+      `AjustePuntos/${alumno.nombre} ${alumno.apellidos}`,
+      `Ajuste manual de puntos sin parte (-${puntos} pts). Motivo: "${texto}". Saldo: ${saldoAnterior} -> ${nuevoSaldo}.`
+    );
+    return { alumnoActualizado, nuevoSaldo, compensacion };
+  }
+
+  /** Anula un ajuste manual de puntos (queda registrado quién, cuándo y por qué; no se borra). */
+  static anularAjustePuntos(
+    idCompensacion: string,
+    motivo: string,
+    usuarioEmail: string
+  ): { alumnoActualizado?: Alumno; nuevoSaldo?: number } {
+    const comps = this.getCompensaciones();
+    const i = comps.findIndex(c => c.id_compensacion === idCompensacion);
+    if (i === -1) throw new Error('Ajuste no encontrado');
+    const c = comps[i];
+    if (c.anulada) return {};
+    if ((Number(c.puntos_recuperados) || 0) >= 0) throw new Error('Solo se pueden anular ajustes manuales.');
+    const saldoAnterior = this.calcularSaldoAlumno(c.id_alumno).saldoActual;
+    comps[i] = {
+      ...c,
+      anulada: true,
+      anulada_por: usuarioEmail,
+      fecha_anulacion: new Date().toISOString(),
+      motivo_anulacion: (motivo || '').trim() || 'Error al registrar el ajuste',
+      puntos_ajuste_original: c.puntos_recuperados,
+      // A 0 para que también deje de contar en los dispositivos que solo reciben los puntos
+      puntos_recuperados: 0,
+    };
+    this.saveCompensaciones(comps);
+    this.addPendingSyncCompensacionId(idCompensacion);
+    const alumno = this.recalcularPuntosAlumnos(c.id_alumno).find(a => a.id_alumno === c.id_alumno);
+    this.addAuditLog(
+      usuarioEmail,
+      'ANULAR_AJUSTE_PUNTOS',
+      `AjustePuntos/${alumno ? `${alumno.nombre} ${alumno.apellidos}` : c.id_alumno}`,
+      `Anulado el ajuste manual del ${c.fecha_completada} (${c.puntos_recuperados} pts). Motivo: "${comps[i].motivo_anulacion}". Saldo: ${saldoAnterior} -> ${alumno?.puntos_actuales}.`
+    );
+    return { alumnoActualizado: alumno, nuevoSaldo: alumno?.puntos_actuales };
+  }
+
+  /**
    * Compensate points (compatibilidad con vistas previas)
    */
   static registrarCompensacion(
