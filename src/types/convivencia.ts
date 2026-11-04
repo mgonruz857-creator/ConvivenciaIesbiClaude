@@ -305,7 +305,7 @@ export interface TramiteSancion {
   por?: string; // correo de quien lo marcó
 }
 
-export type ClaveTramiteSancion = 'llamada_familia' | 'enviado_direccion' | 'enviado_familia' | 'aviso_equipo_docente';
+export type ClaveTramiteSancion = 'llamada_familia' | 'enviado_direccion' | 'enviado_familia' | 'aviso_equipo_docente' | 'guardado_seneca';
 
 export type ModalidadSancion = 'AULA_CONVIVENCIA' | 'EXPULSION';
 
@@ -322,7 +322,8 @@ export interface ExpedienteSancion {
   dias_acude: string; // texto libre: días en que acude al centro
   modalidad: ModalidadSancion;
   fecha_documento: string; // YYYY-MM-DD
-  tramites: Record<ClaveTramiteSancion, TramiteSancion>;
+  /** Los expedientes anteriores al 04/11/2026 no tienen 'guardado_seneca' (cuenta como no marcado). */
+  tramites: Partial<Record<ClaveTramiteSancion, TramiteSancion>>;
   completado: boolean;
   fecha_completado?: string;
 }

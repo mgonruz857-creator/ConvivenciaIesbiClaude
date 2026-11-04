@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { TRAMITES_SANCION } from '../data/sancionesArt37';
 import { ExpedienteSancion, ClaveTramiteSancion, Alumno, Profesor, Sancion, Compensacion, AuditLog, DriveSyncStatus, GrupoEducativo, UnidadInstitucionalConfig, MovimientoPuntos, CursoAcademicoArchivo, InfoCursoAcademico, RoleUsuario } from '../types/convivencia';
 import { ALUMNOS_INICIALES, PROFESORES_INICIALES, SANCIONES_INICIALES, COMPENSACIONES_INICIALES, AUDIT_LOGS_INICIALES, MOVIMIENTOS_INICIALES } from '../data/seedData';
 import { ProfesorImportRow, parsearTextoOcsvProfesores } from './odsImportService';
@@ -1433,6 +1434,7 @@ export class StorageService {
         enviado_direccion: { ...vacio },
         enviado_familia: { ...vacio },
         aviso_equipo_docente: { ...vacio },
+        guardado_seneca: { ...vacio },
       },
       completado: false,
     };
@@ -1456,7 +1458,7 @@ export class StorageService {
     return lista[i];
   }
 
-  /** Marca o desmarca un trámite; el expediente queda completado cuando están los cuatro. */
+  /** Marca o desmarca un trámite; el expediente queda completado cuando están todos (5). */
   static marcarTramite(id: string, clave: ClaveTramiteSancion, hecho: boolean, usuarioEmail: string): ExpedienteSancion | null {
     const lista = this.getExpedientes();
     const i = lista.findIndex(e => e.id_expediente === id);
@@ -1464,7 +1466,7 @@ export class StorageService {
     const ahora = new Date().toISOString();
     const exp = { ...lista[i], tramites: { ...lista[i].tramites } };
     exp.tramites[clave] = hecho ? { hecho: true, fecha: ahora, por: usuarioEmail } : { hecho: false };
-    const todos = Object.values(exp.tramites).every(t => t.hecho);
+    const todos = TRAMITES_SANCION.every(t => exp.tramites[t.clave]?.hecho);
     exp.completado = todos;
     exp.fecha_completado = todos ? (lista[i].fecha_completado || ahora) : undefined;
     exp.timestamp = ahora;
@@ -1481,8 +1483,8 @@ export class StorageService {
     if (i === -1) return null;
     const ahora = new Date().toISOString();
     const exp = { ...lista[i], tramites: { ...lista[i].tramites } };
-    (Object.keys(exp.tramites) as ClaveTramiteSancion[]).forEach(k => {
-      if (!exp.tramites[k].hecho) exp.tramites[k] = { hecho: true, fecha: ahora, por: usuarioEmail };
+    TRAMITES_SANCION.forEach(({ clave: k }) => {
+      if (!exp.tramites[k]?.hecho) exp.tramites[k] = { hecho: true, fecha: ahora, por: usuarioEmail };
     });
     exp.completado = true;
     exp.fecha_completado = ahora;

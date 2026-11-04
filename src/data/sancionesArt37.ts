@@ -37,6 +37,7 @@ export const TRAMITES_SANCION: { clave: ClaveTramiteSancion; etiqueta: string }[
   { clave: 'enviado_direccion', etiqueta: 'Parte de sanción enviado a Dirección para su firma' },
   { clave: 'enviado_familia', etiqueta: 'Parte de sanción firmado por Dirección enviado a la familia' },
   { clave: 'aviso_equipo_docente', etiqueta: 'Equipo docente avisado de la sanción' },
+  { clave: 'guardado_seneca', etiqueta: 'Parte de sanción guardado en Séneca' },
 ];
 
 export const PARRAFO_EXPULSION =

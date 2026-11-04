@@ -136,11 +136,15 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       (`andalucia_edu_emblem_*.jpg`) que convendría borrar.
 - [x] **Sanciones** (Jefatura/Convivencia): aviso del alumnado a 0 puntos sin expediente; expediente con
       conducta del art. 37 (desplegable, 1 sola), fechas, días que acude, modalidad (aula de Convivencia/
-      Orientación o expulsión), fecha del documento; 4 casillas de trámites (quién y cuándo) y botón
+      Orientación o expulsión), fecha del documento; 5 casillas de trámites (quién y cuándo) y botón
       "Marcar todos completados"; **parte de sanción en PDF** según el modelo del centro (sin recibí,
       con espacio para la firma de Dirección). Nombre de la directora en `src/config/centro.ts`.
       El tutor/a ve en Mi Tutoría las sanciones de su grupo y el estado de los trámites (solo lectura).
-      El PDF solo se puede generar con los 4 trámites marcados (decisión de Miguel Ángel). Acceso directo
+      **Cambio 04/11/2026 (Miguel Ángel):** el PDF se puede generar en Sanciones en cualquier momento, sin marcar
+      las casillas, para revisar los datos; y 5ª casilla «Parte de sanción guardado en Séneca». Los expedientes
+      ya completados antes del cambio siguen como completados (la casilla de Séneca aparece sin marcar y se puede
+      marcar); los que estén en trámite necesitan las 5. En el historial del alumno el PDF sigue apareciendo solo
+      con el expediente completado. Solo app (sin cambios en el servidor). ⏳ En PRUEBAS. Acceso directo
       desde el aviso rojo de 0 puntos ("Abrir expediente de sanción").
 - [x] **Resumen diario por correo a tutores (8:30, lunes a viernes; el del lunes recoge viernes y fin de semana)**: solo a tutores activos con partes NUEVOS en su grupo
       (número + día + grupo + enlace a la app, sin datos del alumnado); festivos entre semana: se envía igual (decisión de Miguel Ángel);
