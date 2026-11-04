@@ -183,27 +183,13 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       en guardias): nueva opción «Guardia – Servicio de guardia» en el paso 3 del parte y al editar un parte; aparece en
       Estadísticas (distribución por lugar, barra en rojo) y en el informe PDF (sección 5, ahora con 7 lugares). Los partes
       antiguos no cambian. No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
-- [x] **Partes por docente en el Feed Diario** (petición de Miguel Ángel 04/11/2026): recuadro «Partes por docente» bajo el
-      resumen de la jornada, con periodo propio (Hoy · Esta semana desde el lunes · Este mes · Todo el curso, por defecto el curso),
-      nº de partes, leves/graves/muy graves, puntos restados y fecha del último parte; ordenado de más a menos; muestra 8 y
-      «Ver los N docentes»; botón CSV. Al pulsar un docente, la lista de partes de abajo se filtra por él (etiqueta «Docente: …»
-      para quitarlo). Solo lo ven quienes tienen acceso al Feed (Jefatura/Convivencia). Solo cuenta docentes con algún parte.
-      No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
-- [x] **Histórico de sanciones por alumno** (petición de Miguel Ángel 4/11/2026): en cada alumno se ve cuántas veces ha
-      sido sancionado/a (nº de expedientes de sanción) y cuántas veces se ha quedado a 0 puntos (cada vez que el saldo pasa
-      de más de 0 a 0; recibir otro parte estando ya a 0 no cuenta). Aparece en la tarjeta del Carnet de Puntos, en «Ver
-      Historial» y en la tabla de Mi Tutoría (columnas «Sanciones» y «Veces a 0»). Se calcula en la app con los datos que ya
-      hay (`historicoSancionesPorAlumno` en `carnetPuntos.ts`). Los ajustes manuales «Quitar puntos sin parte» no cuentan
-      como otra vez a 0 (sirven para mantener a 0 a quien recuperó un punto mientras se tramita su sanción). No toca el servidor.
-      🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
-- [x] **Quitar puntos sin parte (ajuste manual)** (petición de Miguel Ángel 4/11/2026: alumnado a 0 que recupera 1 punto
-      a la semana antes de que se tramite su sanción). Jefatura/Convivencia, en Carnet de Puntos («− Quitar puntos») o en
-      «Ver Historial»: de 1 punto al saldo actual (atajo «Dejar en 0»), motivo obligatorio. Queda en el historial del alumno
-      (quién, fecha, motivo) y en la auditoría. No es un parte (no se imprime, no avisa al tutor, no cuenta en estadísticas
-      de partes). **Reinicia el contador de recuperación semanal** como un parte (pendiente de que Miguel Ángel lo confirme).
-      Se puede anular desde el historial («Anular ajuste», con motivo; no se borra, queda marcado). Se guarda como
-      compensación con puntos negativos, así que **no necesita cambio en el servidor** (el profesorado sin privilegios recibe
-      el signo pero no el motivo). Prueba: `pruebas/servidor/ajuste_puntos.test.mts`. En PRUEBAS desde el 4/11/2026.
+- [x] **Partes por docente** (petición de Miguel Ángel 04/11/2026; reparto acordado el mismo día): en el **Feed Diario**,
+      recuadro «Docentes que han puesto parte hoy» (solo hoy, sin selector); al pulsar un docente la lista de partes se filtra por él
+      (etiqueta «Docente: …» para quitarlo). En **Estadísticas**, al final, tabla «Partes por docente» con Esta semana (desde el
+      lunes) · Este mes · Curso (el curso elegido arriba): nº de partes, leves/graves/muy graves, puntos restados y último parte;
+      ordenada de más a menos; 8 visibles y «Ver los N docentes»; botón CSV. Solo docentes con algún parte. Lo demás de ambas
+      secciones no cambia. Solo Jefatura/Convivencia (las dos secciones ya eran solo suyas). No está en el informe PDF (pendiente
+      de que Miguel Ángel diga si lo quiere). No toca el servidor. 🧪 En PRUEBAS desde el 04/11/2026 (pendiente de pasar a producción).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.

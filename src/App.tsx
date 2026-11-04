@@ -751,6 +751,7 @@ export default function App() {
           <AnalyticsView
             sanciones={sanciones}
             alumnos={alumnos}
+            profesores={profesores}
             compensaciones={compensaciones}
             onNavigateToCarnet={(idAlumno) => {
               if (idAlumno) setCarnetFocusedAlumnoId(idAlumno);

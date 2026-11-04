@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { PartesPorDocentePanel } from './PartesPorDocentePanel';
 import { 
   BarChart3, 
   MapPin, 
@@ -42,6 +43,7 @@ import {
   Sancion, 
   Alumno, 
   Compensacion,
+  Profesor,
   CodigoInfraccionROF, 
   TramoHorario, 
   UbicacionCentro 
@@ -59,6 +61,7 @@ import { generateMemoriaConvivenciaPdf } from '../utils/pdfGenerator';
 interface AnalyticsViewProps {
   sanciones: Sancion[];
   alumnos: Alumno[];
+  profesores?: Profesor[];
   compensaciones?: Compensacion[];
   onNavigateToCarnet?: (idAlumno?: string) => void;
 }
@@ -102,6 +105,7 @@ type DetailModalType = 'INFRACCIONES' | 'PUNTOS' | 'PAC' | 'CUMPLIMIENTO' | null
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ 
   sanciones, 
   alumnos, 
+  profesores = [],
   compensaciones = [],
   onNavigateToCarnet 
 }) => {
@@ -1600,6 +1604,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 8. PARTES POR DOCENTE (semana, mes o curso elegido arriba) */}
+      <PartesPorDocentePanel
+        sanciones={sanciones}
+        profesores={profesores}
+        periodos={['SEMANA', 'MES', 'CURSO']}
+        sancionesCurso={datasetYearA}
+        etiquetaCurso={`Curso ${selectedYear}`}
+      />
 
       {/* ========================================================================= */}
       {/* DETAIL MODAL 1: TOTAL INFRACCIONES */}

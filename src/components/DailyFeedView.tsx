@@ -453,10 +453,12 @@ export const DailyFeedView: React.FC<DailyFeedViewProps> = ({
         </div>
       </div>
 
-      {/* Recuento de partes por docente */}
+      {/* Docentes que han puesto parte hoy (el recuento por semana/mes/curso está en Estadísticas) */}
       <PartesPorDocentePanel
         sanciones={sanciones}
         profesores={profesores}
+        periodos={['HOY']}
+        titulo="Docentes que han puesto parte hoy"
         docenteSeleccionado={filterDocente?.clave || ''}
         onSeleccionarDocente={(clave, nombre) => setFilterDocente(clave ? { clave, nombre } : null)}
       />

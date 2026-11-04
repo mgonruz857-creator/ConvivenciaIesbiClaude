@@ -98,8 +98,14 @@ const formatoFecha = (f: string) => (f ? f.split('-').reverse().join('/') : '');
 interface Props {
   sanciones: Sancion[];
   profesores: Profesor[];
-  docenteSeleccionado: string;
-  onSeleccionarDocente: (clave: string, nombre: string) => void;
+  /** Periodos que se pueden elegir (el primero es el inicial). Con uno solo no se muestra selector. */
+  periodos?: PeriodoDocentes[];
+  /** Partes que cuentan como «todo el curso» (p. ej. el curso elegido en Estadísticas). */
+  sancionesCurso?: Sancion[];
+  etiquetaCurso?: string;
+  titulo?: string;
+  docenteSeleccionado?: string;
+  onSeleccionarDocente?: (clave: string, nombre: string) => void;
 }
 
 const FILAS_INICIALES = 8;
@@ -107,15 +113,24 @@ const FILAS_INICIALES = 8;
 export const PartesPorDocentePanel: React.FC<Props> = ({
   sanciones,
   profesores,
-  docenteSeleccionado,
+  periodos = ['HOY', 'SEMANA', 'MES', 'CURSO'],
+  sancionesCurso,
+  etiquetaCurso,
+  titulo = 'Partes por docente',
+  docenteSeleccionado = '',
   onSeleccionarDocente,
 }) => {
-  const [periodo, setPeriodo] = useState<PeriodoDocentes>('CURSO');
+  const [periodo, setPeriodo] = useState<PeriodoDocentes>(periodos[0]);
   const [verTodos, setVerTodos] = useState(false);
+  const etiqueta = (p: PeriodoDocentes) =>
+    p === 'CURSO' && etiquetaCurso ? etiquetaCurso : ETIQUETAS[p];
 
   const filas = useMemo(
-    () => recuentoPorDocente(sanciones, profesores, periodo),
-    [sanciones, profesores, periodo]
+    () =>
+      periodo === 'CURSO' && sancionesCurso
+        ? recuentoPorDocente(sancionesCurso, profesores, 'CURSO')
+        : recuentoPorDocente(sanciones, profesores, periodo),
+    [sanciones, sancionesCurso, profesores, periodo]
   );
   const totalPartes = filas.reduce((acc, f) => acc + f.total, 0);
   const maximo = filas.length > 0 ? filas[0].total : 0;
@@ -130,7 +145,7 @@ export const PartesPorDocentePanel: React.FC<Props> = ({
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = `partes_por_docente_${ETIQUETAS[periodo].toLowerCase().replace(/ /g, '_')}_${hoyLocal()}.csv`;
+    a.download = `partes_por_docente_${etiqueta(periodo).toLowerCase().replace(/ /g, '_')}_${hoyLocal()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -141,17 +156,18 @@ export const PartesPorDocentePanel: React.FC<Props> = ({
         <div className="flex items-center gap-2">
           <UserCheck className="w-4 h-4 text-sky-700" />
           <div>
-            <h2 className="text-sm font-bold text-slate-900">Partes por docente</h2>
+            <h2 className="text-sm font-bold text-slate-900">{titulo}</h2>
             <p className="text-[11px] text-slate-500">
               {totalPartes} {totalPartes === 1 ? 'parte' : 'partes'} de {filas.length}{' '}
-              {filas.length === 1 ? 'docente' : 'docentes'} · {ETIQUETAS[periodo].toLowerCase()}.
-              Pulsa un docente para ver sus partes abajo.
+              {filas.length === 1 ? 'docente' : 'docentes'} · {etiqueta(periodo).toLowerCase()}.
+              {onSeleccionarDocente && ' Pulsa un docente para ver sus partes abajo.'}
             </p>
           </div>
         </div>
+        {periodos.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-1 rounded-lg border border-slate-200">
-            {(Object.keys(ETIQUETAS) as PeriodoDocentes[]).map(p => (
+            {periodos.map(p => (
               <button
                 key={p}
                 type="button"
@@ -162,7 +178,7 @@ export const PartesPorDocentePanel: React.FC<Props> = ({
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
                 }`}
               >
-                {ETIQUETAS[p]}
+                {etiqueta(p)}
               </button>
             ))}
           </div>
@@ -177,10 +193,13 @@ export const PartesPorDocentePanel: React.FC<Props> = ({
             CSV
           </button>
         </div>
+        )}
       </div>
 
       {filas.length === 0 ? (
-        <p className="text-xs text-slate-500 pt-3">No hay partes en este periodo.</p>
+        <p className="text-xs text-slate-500 pt-3">
+          {periodo === 'HOY' ? 'Hoy no se ha puesto ningún parte.' : 'No hay partes en este periodo.'}
+        </p>
       ) : (
         <div className="pt-3 overflow-x-auto">
           <table className="w-full text-xs">
@@ -200,9 +219,9 @@ export const PartesPorDocentePanel: React.FC<Props> = ({
                 return (
                   <tr
                     key={f.clave}
-                    onClick={() => onSeleccionarDocente(activo ? '' : f.clave, f.nombre)}
-                    className={`cursor-pointer transition-colors ${activo ? 'bg-sky-100/70' : 'hover:bg-sky-50/50'}`}
-                    title={activo ? 'Quitar el filtro de este docente' : 'Ver los partes de este docente'}
+                    onClick={onSeleccionarDocente ? () => onSeleccionarDocente(activo ? '' : f.clave, f.nombre) : undefined}
+                    className={onSeleccionarDocente ? `cursor-pointer transition-colors ${activo ? 'bg-sky-100/70' : 'hover:bg-sky-50/50'}` : ''}
+                    title={onSeleccionarDocente ? (activo ? 'Quitar el filtro de este docente' : 'Ver los partes de este docente') : undefined}
                   >
                     <td className="py-1.5 pr-2">
                       <div className="font-semibold text-slate-900">{f.nombre}</div>
