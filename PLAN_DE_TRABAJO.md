@@ -215,9 +215,9 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       ciclos de FP (Frío, Calor) y Bachillerato deja de recuperar el punto semanal; la ESO sigue igual. Sin excepciones. **No es
       retroactivo**: lo recuperado hasta el día del cambio se mantiene. Lo demás no cambia (partes, medidas restaurativas,
       quitar puntos sin parte). En `carnetPuntos.ts`: `FECHA_FIN_RECUPERACION_NO_ESO` = último día en que recuperan
-      (**poner el día en que se pase a la app del centro**; ahora 2026-11-12) y `esGrupoESO`. El grupo que cuenta es el actual
+      (2026-11-12, día en que se pasó a la app del centro) y `esGrupoESO`. El grupo que cuenta es el actual
       del alumno. No toca el servidor. Prueba: `pruebas/servidor/recuperacion_eso.test.mts`.
-      ✅ En PRUEBAS desde el 12/11/2026. Pendiente: pasar a la app del centro y actualizar los manuales.
+      ✅ En PRUEBAS y EN PRODUCCIÓN desde el 12/11/2026 (15:30). Manual del Equipo de Convivencia actualizado (el del profesorado no habla de la recuperación semanal).
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.
