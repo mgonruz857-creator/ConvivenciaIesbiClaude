@@ -106,7 +106,8 @@ Antes de tocar nada, **no restaurar ni borrar sin que Miguel Ángel lo decida** 
 ## Reglas de la app que hay que respetar
 
 - Carnet de puntos: empieza en 10; los partes restan; las medidas restaurativas suman (máx. 10);
-  +1 punto cada 7 días naturales desde el ÚLTIMO parte que restó puntos (los de 0 puntos y las medidas no reinician; los ajustes manuales «Quitar puntos sin parte» tampoco reinician, decisión del 4/11/2026).
+  +1 punto cada 7 días naturales desde el ÚLTIMO parte que restó puntos, **solo ESO** (FP Básica, ciclos y Bachillerato
+  dejaron de recuperar desde el 12/11/2026, sin quitar lo ya recuperado; ver `FECHA_FIN_RECUPERACION_NO_ESO`) (los de 0 puntos y las medidas no reinician; los ajustes manuales «Quitar puntos sin parte» tampoco reinician, decisión del 4/11/2026).
 - El profesorado sin privilegios solo recibe lo imprescindible (el servidor filtra; `vistaDocente`).
   Los tutores ven completo lo de su grupo. Un docente puede asignarse una tutoría libre en su perfil.
 - El PDF del parte de sanción se puede generar en Sanciones sin marcar las casillas (5 trámites, el 5º «guardado en Séneca»; cambio del 04/11/2026).

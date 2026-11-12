@@ -93,9 +93,10 @@ export const TutoriaView: React.FC<TutoriaViewProps> = ({ currentUser, alumnos, 
       historicoSancionesPorAlumno(
         partesGrupo,
         compensaciones.filter((c) => idsGrupo.has(c.id_alumno)),
-        expedientesGrupo
+        expedientesGrupo,
+        () => grupo
       ),
-    [partesGrupo, compensaciones, idsGrupo, expedientesGrupo]
+    [partesGrupo, compensaciones, idsGrupo, expedientesGrupo, grupo]
   );
 
   const partesVisibles = alumnoFiltro ? partesGrupo.filter((s) => s.id_alumno === alumnoFiltro) : partesGrupo;
