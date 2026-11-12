@@ -14,6 +14,9 @@
  *  - Recuperación semanal automática: cada 7 días naturales seguidos sin ningún parte que
  *    reste puntos, +1 punto (máximo 10). El contador se reinicia con cada parte que resta
  *    puntos; los registros de 0 puntos no lo interrumpen. Se aplica al empezar el día 7.
+ *    Solo para la ESO: el alumnado de FP Básica, ciclos de FP y Bachillerato deja de recuperar desde
+ *    el día siguiente a FECHA_FIN_RECUPERACION_NO_ESO (decisión de Miguel Ángel 12/11/2026). Lo que ya
+ *    había recuperado hasta ese día se mantiene (no es retroactivo).
  */
 
 import { Sancion, Compensacion, MovimientoPuntos, ExpedienteSancion } from '../types/convivencia';
@@ -21,6 +24,21 @@ import { Sancion, Compensacion, MovimientoPuntos, ExpedienteSancion } from '../t
 export const SALDO_INICIAL = 10;
 export const SALDO_MAXIMO = 10;
 export const DIAS_RECUPERACION = 7;
+/**
+ * Último día en que el alumnado que no es de ESO (FP Básica, ciclos, Bachillerato) recupera el punto
+ * semanal. Debe ser el día en que el cambio se pasa a la app del centro.
+ */
+export const FECHA_FIN_RECUPERACION_NO_ESO = '2026-11-12';
+
+/** Grupos de ESO (1ESO_A … 4ESO_D, o escritos como «1º ESO A»). */
+export function esGrupoESO(grupo?: string): boolean {
+  return /^\s*[1-4]\s*[ºª°]?\s*[-_ ]?\s*ESO/i.test(grupo || '');
+}
+
+/** ¿Tiene recuperación semanal este grupo? La ESO, siempre; el resto, solo hasta FECHA_FIN_RECUPERACION_NO_ESO. */
+export function recuperaSemanalmente(grupo?: string): boolean {
+  return grupo === undefined || esGrupoESO(grupo);
+}
 
 const MIN_POR_DIA = 24 * 60;
 
@@ -76,13 +94,17 @@ const mismoAlumno = (a?: string, b?: string) =>
 /**
  * Calcula el carnet de un alumno a partir de sus partes y medidas restaurativas.
  * @param hasta fecha (YYYY-MM-DD) hasta la que se aplican recuperaciones semanales; por defecto hoy.
+ * @param grupo grupo del alumno. Si no es de ESO, la recuperación semanal solo se aplica hasta
+ *   FECHA_FIN_RECUPERACION_NO_ESO. Sin grupo (desconocido) se aplica como en la ESO.
  */
 export function calcularCarnet(
   idAlumno: string,
   sanciones: Sancion[],
   compensaciones: Compensacion[],
-  hasta: string = hoyLocal()
+  hasta: string = hoyLocal(),
+  grupo?: string
 ): ResultadoCarnet {
+  const diaFinRecuperacion = recuperaSemanalmente(grupo) ? Infinity : diaDeFecha(FECHA_FIN_RECUPERACION_NO_ESO);
   const eventos: Evento[] = [];
 
   for (const s of sanciones) {
@@ -131,6 +153,7 @@ export function calcularCarnet(
     for (;;) {
       const diaRecuperacion = diaUltimoParte + DIAS_RECUPERACION * (semanasAplicadas + 1);
       if (diaRecuperacion * MIN_POR_DIA > tLimite) return;
+      if (diaRecuperacion > diaFinRecuperacion) return; // FP Básica, ciclos y Bachillerato: ya no recuperan
       semanasAplicadas++;
       if (saldo >= SALDO_MAXIMO) continue; // con el carnet lleno no hay nada que recuperar
       const anterior = saldo;
@@ -257,11 +280,13 @@ const claveAlumno = (id?: string) => (id || '').toLowerCase().trim();
  * Histórico de sanciones de cada alumno: nº de expedientes de sanción y nº de veces a 0 puntos.
  * Agrupa primero por alumno para no repasar todos los partes una vez por alumno.
  * Para consultar, usar `historicoDe(mapa, idAlumno)`.
+ * @param grupoDe grupo de cada alumno (para saber si tiene recuperación semanal).
  */
 export function historicoSancionesPorAlumno(
   sanciones: Sancion[],
   compensaciones: Compensacion[],
   expedientes: ExpedienteSancion[],
+  grupoDe?: (idAlumno: string) => string | undefined,
   hasta: string = hoyLocal()
 ): Map<string, HistoricoSancionesAlumno> {
   const partes = new Map<string, Sancion[]>();
@@ -282,7 +307,8 @@ export function historicoSancionesPorAlumno(
   }
   const resultado = new Map<string, HistoricoSancionesAlumno>();
   for (const [k, ps] of partes) {
-    const r = calcularCarnet(ids.get(k) || k, ps, medidas.get(k) || [], hasta);
+    const id = ids.get(k) || k;
+    const r = calcularCarnet(id, ps, medidas.get(k) || [], hasta, grupoDe ? grupoDe(id) : undefined);
     if (r.vecesSaldoCero > 0) resultado.set(k, { sanciones: 0, vecesSaldoCero: r.vecesSaldoCero });
   }
   for (const e of expedientes) {

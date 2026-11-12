@@ -181,8 +181,11 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
   // Conteo de activos y bajas
   // Histórico de sanciones de cada alumno: nº de expedientes de sanción y veces que se ha quedado a 0 puntos
   const historicoSanciones = useMemo(
-    () => historicoSancionesPorAlumno(sanciones, compensaciones, expedientes),
-    [sanciones, compensaciones, expedientes]
+    () => {
+      const grupos = new Map(alumnos.map((a) => [(a.id_alumno || '').toLowerCase().trim(), a.grupo]));
+      return historicoSancionesPorAlumno(sanciones, compensaciones, expedientes, (id) => grupos.get((id || '').toLowerCase().trim()));
+    },
+    [sanciones, compensaciones, expedientes, alumnos]
   );
 
   const countActivos = useMemo(() => alumnos.filter(a => a.estado !== 'BAJA').length, [alumnos]);
@@ -496,7 +499,7 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                 onClick={handleTriggerWeeklyRecovery}
                 disabled={isExecutingWeekly}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                title="La recuperación semanal (+1 punto cada 7 días sin partes) se aplica sola. Este botón solo actualiza los saldos en pantalla."
+                title="La recuperación semanal (+1 punto cada 7 días sin partes, solo alumnado de ESO) se aplica sola. Este botón solo actualiza los saldos en pantalla."
               >
                 <RotateCcw className={`w-3.5 h-3.5 ${isExecutingWeekly ? 'animate-spin' : ''}`} />
                 <span>Actualizar saldos (recuperación automática)</span>
@@ -1451,7 +1454,7 @@ export const CarnetListView: React.FC<CarnetListViewProps> = ({
                 </div>
                 <p>
                   No es un parte: no se imprime, no avisa al tutor/a ni cuenta como parte en las estadísticas. La recuperación
-                  semanal (+1 cada 7 días) sigue contando desde el último parte, no desde hoy.
+                  semanal (+1 cada 7 días, solo ESO) sigue contando desde el último parte, no desde hoy.
                 </p>
               </div>
 

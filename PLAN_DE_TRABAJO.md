@@ -211,6 +211,13 @@ contraseña de siempre; quien tuviera la contraseña restablecida en la app anti
       compensación con puntos negativos, así que **no necesita cambio en el servidor** (el profesorado sin privilegios recibe
       el signo pero no el motivo). Prueba: `pruebas/servidor/ajuste_puntos.test.mts`.
       ✅ En PRUEBAS y EN PRODUCCIÓN desde el 04/11/2026 (no toca el servidor).
+- [x] **Recuperación semanal solo para la ESO** (petición de Miguel Ángel 12/11/2026): el alumnado de FP Básica (1º/2º INF),
+      ciclos de FP (Frío, Calor) y Bachillerato deja de recuperar el punto semanal; la ESO sigue igual. Sin excepciones. **No es
+      retroactivo**: lo recuperado hasta el día del cambio se mantiene. Lo demás no cambia (partes, medidas restaurativas,
+      quitar puntos sin parte). En `carnetPuntos.ts`: `FECHA_FIN_RECUPERACION_NO_ESO` = último día en que recuperan
+      (**poner el día en que se pase a la app del centro**; ahora 2026-11-12) y `esGrupoESO`. El grupo que cuenta es el actual
+      del alumno. No toca el servidor. Prueba: `pruebas/servidor/recuperacion_eso.test.mts`.
+      ✅ En PRUEBAS desde el 12/11/2026. Pendiente: pasar a la app del centro y actualizar los manuales.
 - [ ] **Actualizar teléfonos de forma masiva** (pendiente, decisión de Miguel Ángel 21/10/2026): opción «Actualizar
       teléfonos» en Importar que solo cambie teléfono (y tutor legal), sin crear alumnos ni tocar grupo/bajas, con vista
       previa (encontrados, no encontrados, ambiguos) y registro en auditoría. Falta saber las columnas del listado de Séneca.

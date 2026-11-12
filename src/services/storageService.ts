@@ -1565,8 +1565,14 @@ export class StorageService {
    * Histórico de puntos del alumno, calculado a partir de sus partes y medidas restaurativas
    * (igual en todos los dispositivos). Del más reciente al más antiguo.
    */
+  /** Grupo del alumno (para la recuperación semanal, que solo tiene la ESO). */
+  static grupoDeAlumno(idAlumno: string): string | undefined {
+    const k = (idAlumno || '').toLowerCase().trim();
+    return this.getAlumnos().find((a) => (a.id_alumno || '').toLowerCase().trim() === k)?.grupo;
+  }
+
   static getMovimientosPorAlumno(idAlumno: string): MovimientoPuntos[] {
-    return calcularCarnet(idAlumno, this.getActiveSanciones(), this.getCompensaciones()).movimientos;
+    return calcularCarnet(idAlumno, this.getActiveSanciones(), this.getCompensaciones(), hoyLocal(), this.grupoDeAlumno(idAlumno)).movimientos;
   }
 
   static registrarMovimiento(movData: Omit<MovimientoPuntos, 'id_movimiento'>): MovimientoPuntos {
@@ -1765,7 +1771,7 @@ export class StorageService {
     countSanciones: number;
     estado: Alumno['estado'];
   } {
-    const r = calcularCarnet(idAlumno, this.getActiveSanciones(), this.getCompensaciones());
+    const r = calcularCarnet(idAlumno, this.getActiveSanciones(), this.getCompensaciones(), hoyLocal(), this.grupoDeAlumno(idAlumno));
     return {
       saldoActual: r.saldo,
       totalPuntosPerdidos: r.totalPuntosPerdidos,
@@ -1784,7 +1790,7 @@ export class StorageService {
     if (!target) {
       return { saldoAnterior: 10, saldoResultante: 10 };
     }
-    const r = calcularCarnet(target.id_alumno, sanciones, this.getCompensaciones());
+    const r = calcularCarnet(target.id_alumno, sanciones, this.getCompensaciones(), hoyLocal(), this.grupoDeAlumno(target.id_alumno));
     return r.saldosPorSancion.get(idSancion) || { saldoAnterior: 10, saldoResultante: 10 };
   }
 
@@ -1856,7 +1862,7 @@ export class StorageService {
     this.saveSanciones(sanciones);
 
     // Saldos reales antes/después de este parte según el orden cronológico
-    const tramo = calcularCarnet(alumno.id_alumno, this.getActiveSanciones(), this.getCompensaciones()).saldosPorSancion.get(idSancion);
+    const tramo = calcularCarnet(alumno.id_alumno, this.getActiveSanciones(), this.getCompensaciones(), hoyLocal(), alumno.grupo).saldosPorSancion.get(idSancion);
     if (tramo) {
       nuevaSancion.saldo_anterior = tramo.saldoAnterior;
       nuevaSancion.saldo_resultante = tramo.saldoResultante;
@@ -1910,7 +1916,7 @@ export class StorageService {
         return alumno;
       }
 
-      const r = calcularCarnet(alumno.id_alumno, activeSanciones, compensaciones, hoy);
+      const r = calcularCarnet(alumno.id_alumno, activeSanciones, compensaciones, hoy, alumno.grupo);
       const nuevoEstado: Alumno['estado'] = alumno.estado === 'BAJA' ? 'BAJA' : estadoPorSaldo(r.saldo);
 
       if (alumno.puntos_actuales !== r.saldo || alumno.historial_sanciones_count !== r.countSanciones || alumno.estado !== nuevoEstado) {
